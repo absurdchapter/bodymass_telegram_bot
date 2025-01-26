@@ -36,7 +36,7 @@ _assert_enum_consistency(Language)
 languages = [k for k in vars(Language).keys() if not k.startswith('_')]
 
 
-async def get_conversation_data(user_id: int) -> dict:
+async def get_user_data(user_id: int) -> dict:
     async with aiosqlite.connect(sqlite_db_path) as db:
         result = dict()
         result['conversation_state'] = await get_conversation_state(db, user_id)
@@ -75,11 +75,11 @@ async def get_language(db: aiosqlite.Connection, user_id: int) -> str | None:
         raise exc
 
 
-async def write_conversation_data(user_id: int, conversation_data: dict) -> None:
+async def write_user_data(user_id: int, user_data: dict) -> None:
     async with aiosqlite.connect(sqlite_db_path) as db:
-        await write_conversation_state(db, conversation_data['conversation_state'], user_id)
-        if 'language' in conversation_data:
-            await write_language(db, conversation_data['language'], user_id)
+        await write_conversation_state(db, user_data['conversation_state'], user_id)
+        if 'language' in user_data:
+            await write_language(db, user_data['language'], user_id)
 
 
 async def write_conversation_state(db: aiosqlite.Connection, conversation_state: str, user_id: int):
