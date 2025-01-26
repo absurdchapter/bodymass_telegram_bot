@@ -1,5 +1,5 @@
-from src.datautils import date_format
 import src.config as config
+from src.datautils import date_format
 
 COMMAND_LIST = "/enter_weight - enter current weight\n\n" \
                "/plot - show plot (2 weeks) \n" \
@@ -108,3 +108,9 @@ BODYWEIGHT_PLOT_LABEL = 'Bodyweight, kg'
 
 LANGUAGE_SELECTED = ("Language has been successfully changed to English.\n\n"
                      "/start - show menu")
+
+NOTFAT_OPTIONS = [
+    "Hey there! 🌟 Remember, you're not just not fat — you're beautifully unique, strong, and on an incredible journey towards your best self. Every step you take, every healthy choice you make, is a testament to your resilience and commitment. Keep shining, keep moving, and never forget how amazing you are, just the way you are! 🏋️‍♀️💪 Let's keep getting leaner and stronger together, with a heart full of positivity and pride! 🎉",
+    "Ah, you used the secret `/notfat` command! 🕵️‍♂️ Well, let me tell you something — you're not fat, you're fabulous! Your body is a temple, and you're nurturing it with care and dedication. Keep up the fantastic work! Remember, every pound you shed is a pound closer to feeling lighter, more energized, and absolutely radiant. You've got this! 💖",
+    "Listen closely, dear %USERNAME%! You are not just not fat; <b>you are absolutely uniquely wonderful and beautifully crafted!</b>\n\nRemember, the journey to your ideal self is not just about the numbers on the scale but about health, joy, and self-acceptance. You've already taken a huge step by starting to monitor your weight and caring for yourself. Keep going with the same spirit, believe in yourself, and know that every step forward is a victory!\n\n<b>Let's make this journey even brighter and more inspiring together! You've got this!</b>"""
+]

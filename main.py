@@ -5,16 +5,16 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from telebot.async_telebot import AsyncTeleBot
-from telebot import types
 from telebot import logger
+from telebot import types
+from telebot.async_telebot import AsyncTeleBot
 
-from src.glossaries import Glossary
+import src.config
 from src.conversationdata import get_user_data, write_user_data, ConversationState
+from src.datautils import CSVParsingError
 from src.datautils import (plot_user_data, add_record_now, date_format, user_data_to_csv, user_data_from_csv_url,
                            delete_user_data)
-from src.datautils import CSVParsingError
-import src.config
+from src.glossaries import Glossary
 
 bot = AsyncTeleBot(src.config.TELEGRAM_TOKEN)
 
@@ -80,6 +80,8 @@ async def reply(message: types.Message, user_data: dict):
             await reply_erase(message, user_data)
         elif message_text == '/language':
             await reply_language(message, user_data)
+        elif message_text == '/notfat':
+            await reply_notfat(message, user_data)
         elif conversation_state == ConversationState.awaiting_body_weight:
             await reply_body_weight(message, user_data)
         elif conversation_state == ConversationState.awaiting_erase_confirmation:
@@ -105,6 +107,20 @@ async def reply(message: types.Message, user_data: dict):
 
 async def reply_info(message: types.Message, user_data: dict):
     text = glossary(user_data).info()
+
+    await bot.send_message(message.chat.id, text,
+                           reply_markup=default_markup(user_data),
+                           parse_mode="HTML",
+                           disable_web_page_preview=True)
+    user_data['conversation_state'] = ConversationState.init
+
+
+async def reply_notfat(message: types.Message, user_data: dict):
+    text = glossary(user_data).notfat()
+    try:
+        text = text.replace("%USERNAME%", message.chat.first_name or f'@{message.chat.username}' or "%USERNAME%")
+    except:
+        pass
 
     await bot.send_message(message.chat.id, text,
                            reply_markup=default_markup(user_data),
