@@ -13,6 +13,7 @@ TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
 class TelegramTokenNotSpecified(Exception):
     pass
 
+
 if not TELEGRAM_TOKEN:
     raise TelegramTokenNotSpecified("Please specify TELEGRAM_TOKEN environmental variable or edit src/config.py")
 

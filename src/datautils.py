@@ -11,8 +11,6 @@ from typing import Optional
 import requests
 from codecs import iterdecode
 
-from src import glossary
-
 sqlite_db_path = 'data/bodymass.sqlite'
 sqlite_db_users_mass = 'users_mass'
 
@@ -29,10 +27,10 @@ date_format = "%Y/%m/%d"
 
 
 if not os.path.exists(sqlite_db_path):
-    with sqlite3.connect(sqlite_db_path) as db:
+    with sqlite3.connect(sqlite_db_path) as db_:
         with open(sql_header_path, 'r') as sql_header:
             for command in sql_header.read().split(';'):
-                db.execute(command)
+                db_.execute(command)
 
 
 async def add_record_now(user_id: int, body_mass: float) -> None:
@@ -68,12 +66,14 @@ def random_hash() -> str:
     return uuid.uuid4().hex[:8]
 
 
-async def plot_user_data(user_id: int, only_two_weeks: bool = False) -> tuple[str, Optional[np.array], float]:
+async def plot_user_data(user_id: int, only_two_weeks: bool = False, plot_label: str = 'Bodyweight, kg') \
+        -> tuple[str, Optional[np.array], float]:
     """Plot user data to an image.
 
     Keyword arguments:
     :param user_id: user id
     :param only_two_weeks: draw progress only for the past 2 weeks
+    :param plot_label: plot label
 
     :return: image temporary file path, speed kg/week, mean body mass
     """
@@ -92,7 +92,7 @@ async def plot_user_data(user_id: int, only_two_weeks: bool = False) -> tuple[st
         date_list.append(datetime_object)
         mass_list.append(body_mass)
 
-    regression_coef = draw_plot_mass(date_list, mass_list, plot_file_path)
+    regression_coef = draw_plot_mass(date_list, mass_list, plot_file_path, plot_label)
     speed_kg_week = round(regression_coef[0] * 7, 2) if regression_coef is not None else None
     if len(mass_list) < 4:
         speed_kg_week = None
@@ -100,7 +100,7 @@ async def plot_user_data(user_id: int, only_two_weeks: bool = False) -> tuple[st
     return plot_file_path, speed_kg_week, float(np.mean(mass_list))
 
 
-def draw_plot_mass(date: list[datetime], mass: list[float], file_path: str) -> Optional[np.array]:
+def draw_plot_mass(date: list[datetime], mass: list[float], file_path: str, plot_label: str) -> Optional[np.array]:
     x = list(map(date2num, date))
     y = mass
 
@@ -121,7 +121,7 @@ def draw_plot_mass(date: list[datetime], mass: list[float], file_path: str) -> O
     if len(x) > 1:
         pyplot.plot(x, regression_func(x))
 
-    pyplot.ylabel(glossary.BODYWEIGHT_PLOT_LABEL)
+    pyplot.ylabel(plot_label)
 
     ax.xaxis.set_major_formatter(DateFormatter('%d %b'))
     pyplot.xticks(rotation=45)
@@ -170,12 +170,3 @@ async def user_data_from_csv_url(user_id: int, csv_url: str, max_body_weight: in
                 raise CSVParsingError()
 
             await add_record(user_id, date, body_weight)
-
-
-
-
-
-
-
-
-
