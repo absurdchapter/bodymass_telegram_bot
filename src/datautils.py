@@ -25,7 +25,6 @@ plot_tmp_filename_template = '{user_id}_{hash}.png'
 
 date_format = "%Y/%m/%d"
 
-
 if not os.path.exists(sqlite_db_path):
     with sqlite3.connect(sqlite_db_path) as db_:
         with open(sql_header_path, 'r') as sql_header:
@@ -55,7 +54,7 @@ async def delete_user_data(user_id: int) -> None:
 async def fetch_user_data(user_id: int):
     async with aiosqlite.connect(sqlite_db_path) as db:
         async with db.cursor() as cursor:
-            await cursor.execute(f"SELECT date, body_mass FROM {sqlite_db_users_mass} " 
+            await cursor.execute(f"SELECT date, body_mass FROM {sqlite_db_users_mass} "
                                  f"WHERE user_id = '{user_id}' ORDER BY date ASC")
             while row := await cursor.fetchone():
                 yield row

@@ -41,7 +41,6 @@ INFO = "This bot is designed to track body weight and will help you on your fitn
        "But it is a better idea to consult a coach or nutritionist since these numbers depend" \
        "on a variety of factors (sex, age, overall health). "
 
-
 HELLO = "Hello, I am a bot designed to track body weight and help you reach fitness goals. " \
         "Please select a command below.\n\n"
 
@@ -81,11 +80,9 @@ REPLY_UPLOAD += "\n\n/start - return to menu"
 
 NO_VALID_DOCUMENT = "I didn't get a valid document.\n/start"
 
-
 FILE_TOO_BIG = f"File is too big (max size {config.MAX_FILE_SIZE // 1024} kb)"
 FILE_INVALID = "The file is invalid. Please use /download to get an example of a valid file.\n/start"
 FILE_UNEXPECTED_ERROR = "Unexpected error occurred during your file processing. I'm sorry.\n/start"
-
 
 DATA_UPLOADED_SUCCESSFULLY = "<b>Data has been uploaded successfully.</b>\nTake a look at the plot."
 
@@ -100,7 +97,7 @@ CANCEL_DELETE = 'Ok, cancelling the deletion.'
 
 NO_DATA_YET = "You don't have any data yet."
 
-ERASE_COMPLETE = 'Ok, I have forgotten everything about your progress.\n'\
+ERASE_COMPLETE = 'Ok, I have forgotten everything about your progress.\n' \
                  'But grab the file with your erased data, just in case.'
 
 UNEXPECTED_DOCUMENT = ("That is an unexpected document. "
