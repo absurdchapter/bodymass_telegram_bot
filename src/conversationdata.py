@@ -30,7 +30,7 @@ class Language:
     russian = 'russian'
 
 
-default_language = Language.english
+DEFAULT_LANGUAGE = Language.english
 
 _assert_enum_consistency(Language)
 languages = [k for k in vars(Language).keys() if not k.startswith('_')]
@@ -40,7 +40,7 @@ async def get_user_data(user_id: int) -> dict:
     async with aiosqlite.connect(sqlite_db_path) as db:
         result = dict()
         result['conversation_state'] = await get_conversation_state(db, user_id)
-        result['language'] = await get_language(db, user_id) or default_language
+        result['language'] = await get_language(db, user_id) or DEFAULT_LANGUAGE
 
         return result
 

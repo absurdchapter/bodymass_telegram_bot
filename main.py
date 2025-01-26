@@ -10,7 +10,7 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 import src.config
-from src.conversationdata import get_user_data, write_user_data, ConversationState
+from src.conversationdata import get_user_data, write_user_data, ConversationState, Language
 from src.datautils import CSVParsingError
 from src.datautils import (plot_user_data, add_record_now, date_format, user_data_to_csv, user_data_from_csv_url,
                            delete_user_data)
@@ -378,8 +378,8 @@ async def reply_language(message: types.Message, user_data: dict):
 async def reply_language_selected(message: types.Message, user_data: dict):
     language = message.text.strip().lower()
     language_map = {
-        'english': 'english',
-        'русский': 'russian'
+        'english': Language.english,
+        'русский': Language.russian
     }
     if language not in language_map:
         await bot.reply_to(message, Glossary.unknown_language(), reply_markup=reply_markup(["English", "Русский"]))
