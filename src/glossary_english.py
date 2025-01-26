@@ -106,4 +106,5 @@ UNEXPECTED_DOCUMENT = ("That is an unexpected document. "
 
 BODYWEIGHT_PLOT_LABEL = 'Bodyweight, kg'
 
-LANGUAGE_SELECTED = "Language selected: English"
+LANGUAGE_SELECTED = ("Language has been successfully changed to English.\n\n"
+                     "/start - show menu")

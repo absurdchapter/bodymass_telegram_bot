@@ -107,4 +107,5 @@ UNEXPECTED_DOCUMENT = "Неожиданный документ. " \
 
 BODYWEIGHT_PLOT_LABEL = 'Масса тела, кг'
 
-LANGUAGE_SELECTED = "Выбран язык: русский"
+LANGUAGE_SELECTED = ("Язык интерфейса изменён на русский. \n\n"
+                     "/start - показать меню ")

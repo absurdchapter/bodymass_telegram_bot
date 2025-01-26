@@ -25,7 +25,7 @@ plot_tmp_filename_template = '{user_id}_{hash}.png'
 
 date_format = "%Y/%m/%d"
 
-if not os.path.exists(sqlite_db_path):
+if not os.path.exists(sqlite_db_path) or os.environ.get('UPDATE_DATABASE'):
     with sqlite3.connect(sqlite_db_path) as db_:
         with open(sql_header_path, 'r') as sql_header:
             for command in sql_header.read().split(';'):

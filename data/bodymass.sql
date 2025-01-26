@@ -1,7 +1,7 @@
 --
--- File generated with SQLiteStudio v3.4.3 on Sat Feb 18 15:35:42 2023
+-- File generated with SQLiteStudio v3.4.15 on Sun Jan 26 22:31:08 2025
 --
--- Text encoding used: System
+-- Text encoding used: UTF-8
 --
 PRAGMA foreign_keys = off;
 BEGIN TRANSACTION;
@@ -12,6 +12,12 @@ CREATE TABLE IF NOT EXISTS users_conversation (
     conversation_state TEXT
 );
 
+-- Table: users_language
+CREATE TABLE IF NOT EXISTS users_language (
+    user_id  TEXT (32) PRIMARY KEY
+                       UNIQUE ON CONFLICT REPLACE,
+    language TEXT (32) NOT NULL
+);
 
 -- Table: users_mass
 CREATE TABLE IF NOT EXISTS users_mass (
