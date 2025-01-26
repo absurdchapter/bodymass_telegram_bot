@@ -16,7 +16,6 @@ from src.datautils import (plot_user_data, add_record_now, date_format, user_dat
 from src.datautils import CSVParsingError
 import src.config
 
-
 bot = AsyncTeleBot(src.config.TELEGRAM_TOKEN)
 
 logger.setLevel(logging.DEBUG)
@@ -56,7 +55,7 @@ def default_markup(user_data: dict):
 
 
 async def reply(message: types.Message, user_data: dict):
-    logger.debug("User data:"+str(user_data))
+    logger.debug("User data:" + str(user_data))
 
     conversation_state = user_data['conversation_state']
 
@@ -339,5 +338,6 @@ async def reply_unexpected_document(message: types.Message, user_data: dict):
     text = glossary(user_data).unexpected_document()
     await bot.reply_to(message, text, reply_markup=default_markup(user_data))
     user_data['conversation_state'] = ConversationState.init
+
 
 asyncio.run(bot.polling(non_stop=True))
