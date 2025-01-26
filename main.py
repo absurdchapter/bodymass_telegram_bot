@@ -25,8 +25,8 @@ fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s [%(filename)s:%(l
 logger.addHandler(fh)
 
 
-def glossary(user_dict: dict) -> Glossary:
-    return Glossary(user_dict.get('language'))
+def glossary(user_data: dict) -> Glossary:
+    return Glossary(user_data.get('language'))
 
 
 @bot.message_handler(content_types=['document'])
@@ -78,6 +78,8 @@ async def reply(message: types.Message, user_data: dict):
             await reply_upload(message, user_data)
         elif message_text == '/erase':
             await reply_erase(message, user_data)
+        elif message_text == '/language':
+            await reply_language(message, user_data)
         elif conversation_state == ConversationState.awaiting_body_weight:
             await reply_body_weight(message, user_data)
         elif conversation_state == ConversationState.awaiting_erase_confirmation:
@@ -88,6 +90,8 @@ async def reply(message: types.Message, user_data: dict):
             await reply_unexpected_document(message, user_data)
         elif conversation_state == ConversationState.init:
             await reply_start(message, user_data)
+        elif conversation_state == ConversationState.awaiting_language:
+            await reply_language_selected(message, user_data)
         else:
             assert False, "Conversation state assertion"
     else:
@@ -336,6 +340,29 @@ async def reply_erase_confirmation(message, user_data: dict):
 
 async def reply_unexpected_document(message: types.Message, user_data: dict):
     text = glossary(user_data).unexpected_document()
+    await bot.reply_to(message, text, reply_markup=default_markup(user_data))
+    user_data['conversation_state'] = ConversationState.init
+
+
+async def reply_language(message: types.Message, user_data: dict):
+    text = Glossary.select_language()
+    await bot.reply_to(message, text, reply_markup=reply_markup(["English", "Русский"]))
+    user_data['conversation_state'] = ConversationState.awaiting_language
+
+
+async def reply_language_selected(message: types.Message, user_data: dict):
+    language = message.text.strip().lower()
+    language_map = {
+        'english': 'english',
+        'русский': 'russian'
+    }
+    if language not in language_map:
+        await bot.reply_to(message, Glossary.unknown_language(), reply_markup=reply_markup(["English", "Русский"]))
+        return
+
+    user_data['language'] = language_map[language]
+
+    text = glossary(user_data).language_selected()
     await bot.reply_to(message, text, reply_markup=default_markup(user_data))
     user_data['conversation_state'] = ConversationState.init
 
