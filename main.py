@@ -10,7 +10,7 @@ from telebot import types
 from telebot import logger
 
 from src.glossaries import Glossary
-from src.conversationdata import get_conversation_data, write_conversation_data, ConversationState
+from src.conversationdata import get_user_data, write_user_data, ConversationState
 from src.datautils import (plot_user_data, add_record_now, date_format, user_data_to_csv, user_data_from_csv_url,
                            delete_user_data)
 from src.datautils import CSVParsingError
@@ -34,7 +34,7 @@ def glossary(user_data: dict) -> Glossary:
 async def handler(message):
     logger.info("Message from %s: %s", message.chat.id, message.text)
     try:
-        user_data = await get_conversation_data(message.chat.id)
+        user_data = await get_user_data(message.chat.id)
         await reply(message, user_data)
     except Exception as exception:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -100,7 +100,7 @@ async def reply(message: types.Message, user_data: dict):
         elif message.document is not None:
             await reply_unexpected_document(message, user_data)
 
-    await write_conversation_data(message.chat.id, user_data)
+    await write_user_data(message.chat.id, user_data)
 
 
 async def reply_info(message: types.Message, user_data: dict):
