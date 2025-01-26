@@ -121,3 +121,14 @@ class Glossary:
 
     def bodyweight_plot_label(self) -> str:
         return self._module().BODYWEIGHT_PLOT_LABEL
+
+    def language_selected(self) -> str:
+        return self._module().LANGUAGE_SELECTED
+
+    @classmethod
+    def select_language(cls) -> str:
+        return "Select language / Выберите язык"
+
+    @classmethod
+    def unknown_language(cls) -> str:
+        return "Unknown language / Неизвестный язык"

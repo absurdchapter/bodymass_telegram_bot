@@ -8,7 +8,8 @@ COMMAND_LIST = "/enter_weight - ввести текущий вес\n\n" \
                "/upload - загрузить данные в бота (*.csv)\n" \
                "/erase - стереть все данные \n\n" \
                "/start - показать меню \n\n" \
-               "/info - информация и советы по использованию бота"
+               "/info - информация и советы по использованию бота\n" \
+               "/language - change language"
 
 ENTER_WEIGHT_BUTTON = "Ввести свой вес"
 ENTER_WEIGHT_COMMANDS = ['/enter_weight', ENTER_WEIGHT_BUTTON]
@@ -105,3 +106,5 @@ UNEXPECTED_DOCUMENT = "Неожиданный документ. " \
                       "Вы хотите, чтобы я загрузил данные о вашем весе? Используйте команду /upload."
 
 BODYWEIGHT_PLOT_LABEL = 'Масса тела, кг'
+
+LANGUAGE_SELECTED = "Выбран язык: русский"

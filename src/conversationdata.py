@@ -9,6 +9,7 @@ class ConversationState:
     awaiting_body_weight = 'awaiting_body_weight'
     awaiting_erase_confirmation = 'awaiting_erase_confirmation'
     awaiting_csv_table = 'awaiting_csv_table'
+    awaiting_language = 'awaiting_language'
 
 
 conversation_states = [k for k in vars(ConversationState).keys() if not k.startswith('_')]

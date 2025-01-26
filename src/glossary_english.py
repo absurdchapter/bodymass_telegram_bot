@@ -8,7 +8,8 @@ COMMAND_LIST = "/enter_weight - enter current weight\n\n" \
                "/upload - upload data (*.csv)\n" \
                "/erase - erase all data \n\n" \
                "/start - show menu \n\n" \
-               "/info - info and advice on how to use this bot"
+               "/info - info and advice on how to use this bot\n" \
+               "/language - сменить язык"
 
 ENTER_WEIGHT_BUTTON = "Enter current body weight"
 ENTER_WEIGHT_COMMANDS = ['/enter_weight', ENTER_WEIGHT_BUTTON]
@@ -104,3 +105,5 @@ UNEXPECTED_DOCUMENT = ("That is an unexpected document. "
                        "Do you want me to upload your body weight data? Use the /upload command.")
 
 BODYWEIGHT_PLOT_LABEL = 'Bodyweight, kg'
+
+LANGUAGE_SELECTED = "Language selected: English"
