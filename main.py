@@ -18,7 +18,16 @@ from src.glossaries import Glossary
 
 bot = AsyncTeleBot(src.config.TELEGRAM_TOKEN)
 
-logger.setLevel(logging.DEBUG)
+debug_mode = False
+if os.environ.get("DEBUG"):
+    debug_mode = True
+
+if debug_mode:
+    logger.setLevel(logging.DEBUG)
+    logger.info("Enabling debug logging")
+else:
+    logger.setLevel(logging.INFO)
+
 os.makedirs('logs', exist_ok=True)
 fh = logging.handlers.TimedRotatingFileHandler('logs/log', when='midnight', encoding='utf-8')
 fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'))
