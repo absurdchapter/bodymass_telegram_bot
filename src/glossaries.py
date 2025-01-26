@@ -3,6 +3,8 @@ import random
 import src.glossary_english
 import src.glossary_russian
 
+from src.conversationdata import Language, DEFAULT_LANGUAGE
+
 
 def _modules():
     return src.glossary_english, src.glossary_russian
@@ -10,10 +12,10 @@ def _modules():
 
 class Glossary:
     def __init__(self, language: str = None):
-        self.language = language
+        self.language = language or DEFAULT_LANGUAGE
 
     def _module(self):
-        if self.language == 'russian':
+        if self.language == Language.russian:
             return src.glossary_russian
         else:
             return src.glossary_english
