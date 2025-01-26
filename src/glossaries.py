@@ -1,3 +1,5 @@
+import random
+
 import src.glossary_english
 import src.glossary_russian
 
@@ -132,3 +134,6 @@ class Glossary:
     @classmethod
     def unknown_language(cls) -> str:
         return "Unknown language / Неизвестный язык"
+
+    def notfat(self):
+        return random.choice(self._module().NOTFAT_OPTIONS)
