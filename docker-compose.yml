@@ -5,6 +5,8 @@ services:
     build: .
     environment: 
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - UPDATE_DATABASE=${UPDATE_DATABASE}
+      - DEBUG=${DEBUG}
     volumes:
       - type: bind
         source: ./logs
