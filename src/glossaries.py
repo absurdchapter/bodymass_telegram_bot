@@ -45,7 +45,7 @@ class Glossary:
     def hello(self) -> str:
         return self._module().HELLO
 
-    def how_much_do_you_weight(self) -> str:
+    def how_much_do_you_weigh(self) -> str:
         return self._module().HOW_MUCH_DO_YOU_WEIGH
 
     def you_are_maintaining(self) -> str:

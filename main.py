@@ -147,7 +147,7 @@ async def reply_start(message: types.Message, user_data: dict):
 
 
 async def reply_enter_weight(message: types.Message, user_data: dict):
-    text = glossary(user_data).how_much_do_you_weight()
+    text = glossary(user_data).how_much_do_you_weigh()
     await bot.send_message(message.chat.id, text, parse_mode="HTML")
     user_data['conversation_state'] = ConversationState.awaiting_body_weight
 
