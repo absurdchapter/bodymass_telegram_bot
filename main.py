@@ -128,7 +128,7 @@ async def reply_info(message: types.Message, user_data: dict):
 
 
 async def reply_notfat(message: types.Message, user_data: dict):
-    text = glossary(user_data).notfat()
+    text = glossary(user_data).notfat(message.id)
     try:
         text = text.replace("%USERNAME%", message.chat.first_name or f'@{message.chat.username}' or "%USERNAME%")
     except:

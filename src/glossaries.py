@@ -137,5 +137,15 @@ class Glossary:
     def unknown_language(cls) -> str:
         return "Unknown language / Неизвестный язык"
 
-    def notfat(self):
-        return random.choice(self._module().NOTFAT_OPTIONS)
+    def notfat(self, message_id: int = None):
+        if not isinstance(message_id, int):
+            return random.choice(self._module().NOTFAT_OPTIONS)
+
+        # Rolling logic so that user does not get same answers.
+        # The division by two is required because this is how message ids are numbered:
+        # +1 for the user response, +1 for the bot response.
+
+        message_id //= 2
+        n = len(self._module().NOTFAT_OPTIONS)
+        return self._module().NOTFAT_OPTIONS[message_id % n]
+
