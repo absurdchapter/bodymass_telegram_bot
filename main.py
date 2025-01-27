@@ -28,6 +28,9 @@ if debug_mode:
 else:
     logger.setLevel(logging.INFO)
 
+if os.environ.get("UPDATE_DATABASE"):
+    logger.info("Got a request to update database.")
+
 os.makedirs('logs', exist_ok=True)
 fh = logging.handlers.TimedRotatingFileHandler('logs/log', when='midnight', encoding='utf-8')
 fh.setFormatter(logging.Formatter('%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s'))
