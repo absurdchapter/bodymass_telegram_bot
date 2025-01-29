@@ -1,12 +1,12 @@
 import random
 
-import src.glossary_english
-import src.glossary_russian
+import _english
+import _russian
 from src.datautils.conversation import Language, DEFAULT_LANGUAGE
 
 
 def _modules():
-    return src.glossary_english, src.glossary_russian
+    return _english, _russian
 
 
 class Glossary:
@@ -15,9 +15,9 @@ class Glossary:
 
     def _module(self):
         if self.language == Language.russian:
-            return src.glossary_russian
+            return _russian
         else:
-            return src.glossary_english
+            return _english
 
     def command_list(self) -> str:
         return self._module().COMMAND_LIST
