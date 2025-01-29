@@ -1,5 +1,5 @@
 import src.config as config
-from src.datautils import date_format
+from src.datautils.bodymass import date_format
 
 COMMAND_LIST = "/enter_weight - ввести текущий вес\n\n" \
                "/plot - показать график (за 2 недели) \n" \
