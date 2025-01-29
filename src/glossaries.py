@@ -2,8 +2,7 @@ import random
 
 import src.glossary_english
 import src.glossary_russian
-
-from src.conversationdata import Language, DEFAULT_LANGUAGE
+from src.datautils.conversation import Language, DEFAULT_LANGUAGE
 
 
 def _modules():
@@ -148,4 +147,3 @@ class Glossary:
         message_id //= 2
         n = len(self._module().NOTFAT_OPTIONS)
         return self._module().NOTFAT_OPTIONS[message_id % n]
-

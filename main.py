@@ -10,10 +10,10 @@ from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 import src.config
-from src.conversationdata import get_user_data, write_user_data, ConversationState, Language
-from src.datautils import CSVParsingError
-from src.datautils import (plot_user_data, add_record_now, date_format, user_data_to_csv, user_data_from_csv_url,
-                           delete_user_data)
+from src.datautils.bodymass import date_format, add_bodymass_record_now, delete_user_bodymass_data, \
+    plot_user_bodymass_data, user_bodymass_data_to_csv, \
+    CSVParsingError, user_bodymass_data_from_csv_url
+from src.datautils.conversation import get_conversation_data, write_conversation_data, ConversationState, Language
 from src.glossaries import Glossary
 
 bot = AsyncTeleBot(src.config.TELEGRAM_TOKEN)
@@ -46,7 +46,7 @@ def glossary(user_data: dict) -> Glossary:
 async def handler(message):
     logger.info("Message from %s: %s", message.chat.id, message.text)
     try:
-        user_data = await get_user_data(message.chat.id)
+        user_data = await get_conversation_data(message.chat.id)
         await reply(message, user_data)
     except Exception as exception:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -114,7 +114,7 @@ async def reply(message: types.Message, user_data: dict):
         elif message.document is not None:
             await reply_unexpected_document(message, user_data)
 
-    await write_user_data(message.chat.id, user_data)
+    await write_conversation_data(message.chat.id, user_data)
 
 
 async def reply_info(message: types.Message, user_data: dict):
@@ -187,10 +187,11 @@ async def reply_body_weight(message: types.Message, user_data: dict):
         await bot.reply_to(message, glossary(user_data).please_enter_valid_positive_number())
         return
 
-    await add_record_now(message.chat.id, body_weight)
-    img_path, speed_week_kg, mean_mass = await plot_user_data(message.chat.id,
-                                                              only_two_weeks=True,
-                                                              plot_label=glossary(user_data).bodyweight_plot_label())
+    await add_bodymass_record_now(message.chat.id, body_weight)
+    img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
+                                                                       only_two_weeks=True,
+                                                                       plot_label=glossary(
+                                                                           user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:
         text = f"{glossary(user_data).successfully_added_new_entry()}\n" \
                f"<b>{datetime.now().strftime(date_format)} - {body_weight} kg</b>\n"
@@ -210,9 +211,10 @@ async def reply_body_weight(message: types.Message, user_data: dict):
 
 
 async def reply_plot(message: types.Message, user_data: dict):
-    img_path, speed_week_kg, mean_mass = await plot_user_data(message.chat.id,
-                                                              only_two_weeks=True,
-                                                              plot_label=glossary(user_data).bodyweight_plot_label())
+    img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
+                                                                       only_two_weeks=True,
+                                                                       plot_label=glossary(
+                                                                           user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:
         text = glossary(user_data).here_plot_last_two_weeks()
         text += text_deficit_maintenance_surplus(speed_week_kg, mean_mass, user_data)
@@ -230,9 +232,10 @@ async def reply_plot(message: types.Message, user_data: dict):
 
 
 async def reply_plot_all(message: types.Message, user_data: dict):
-    img_path, speed_week_kg, mean_mass = await plot_user_data(message.chat.id,
-                                                              only_two_weeks=False,
-                                                              plot_label=glossary(user_data).bodyweight_plot_label())
+    img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
+                                                                       only_two_weeks=False,
+                                                                       plot_label=glossary(
+                                                                           user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:
         text = glossary(user_data).here_plot_overall_progress()
         text += text_deficit_maintenance_surplus(speed_week_kg, mean_mass, user_data)
@@ -251,7 +254,7 @@ async def reply_plot_all(message: types.Message, user_data: dict):
 
 
 async def reply_download(message: types.Message, user_data: dict):
-    csv_file_path = await user_data_to_csv(message.chat.id)
+    csv_file_path = await user_bodymass_data_to_csv(message.chat.id)
     file_size = os.path.getsize(csv_file_path)
     if file_size == 0:
         text = glossary(user_data).no_data_to_download_yet()
@@ -296,7 +299,7 @@ async def reply_csv_table(message: types.Message, user_data: dict):
     file_url = 'https://api.telegram.org/file/bot{0}/{1}'.format(src.config.TELEGRAM_TOKEN, file_info.file_path)
 
     try:
-        await user_data_from_csv_url(message.chat.id, file_url, src.config.MAX_BODY_WEIGHT)
+        await user_bodymass_data_from_csv_url(message.chat.id, file_url, src.config.MAX_BODY_WEIGHT)
     except CSVParsingError:
         await bot.reply_to(message, glossary(user_data).file_invalid())
         return
@@ -310,9 +313,10 @@ async def reply_csv_table(message: types.Message, user_data: dict):
 
         return
 
-    img_path, speed_week_kg, mean_mass = await plot_user_data(message.chat.id,
-                                                              only_two_weeks=False,
-                                                              plot_label=glossary(user_data).bodyweight_plot_label())
+    img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
+                                                                       only_two_weeks=False,
+                                                                       plot_label=glossary(
+                                                                           user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:
         text = glossary(user_data).data_uploaded_successfully()
         await bot.send_photo(message.chat.id, caption=text,
@@ -341,8 +345,8 @@ async def reply_erase_confirmation(message, user_data: dict):
         user_data['conversation_state'] = ConversationState.init
         return
 
-    csv_file_path = await user_data_to_csv(message.chat.id)
-    await delete_user_data(message.chat.id)
+    csv_file_path = await user_bodymass_data_to_csv(message.chat.id)
+    await delete_user_bodymass_data(message.chat.id)
 
     file_size = os.path.getsize(csv_file_path)
     if file_size == 0:

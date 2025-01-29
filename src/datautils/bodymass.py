@@ -1,42 +1,32 @@
-import os
 import csv
+import os
 import uuid
-from datetime import datetime, timedelta
-import aiosqlite
-import sqlite3
-from matplotlib.dates import date2num, DateFormatter
-from matplotlib import pyplot
-import numpy as np
-from typing import Optional
-import requests
 from codecs import iterdecode
+from datetime import datetime, timedelta
+from typing import Optional
 
-sqlite_db_path = 'data/bodymass.sqlite'
+import aiosqlite
+import numpy as np
+import requests
+from matplotlib import pyplot
+from matplotlib.dates import date2num, DateFormatter
+
+from src.datautils import sqlite_db_path
+
 sqlite_db_users_mass = 'users_mass'
-
-sql_header_path = 'data/bodymass.sql'
-
 csv_tmp_folder = 'data/tmp/'
 csv_tmp_filename_template = 'bodymass_{user_id}_{hash}.csv'
 csv_uploaded_tmp_filename_template = 'uploaded_{user_id}_{hash}.csv'
-
 plot_tmp_folder = 'data/tmp/'
 plot_tmp_filename_template = '{user_id}_{hash}.png'
-
 date_format = "%Y/%m/%d"
 
-if not os.path.exists(sqlite_db_path) or os.environ.get('UPDATE_DATABASE'):
-    with sqlite3.connect(sqlite_db_path) as db_:
-        with open(sql_header_path, 'r') as sql_header:
-            for command in sql_header.read().split(';'):
-                db_.execute(command)
+
+async def add_bodymass_record_now(user_id: int, body_mass: float) -> None:
+    await add_bodymass_record(user_id, datetime.now().date(), body_mass)
 
 
-async def add_record_now(user_id: int, body_mass: float) -> None:
-    await add_record(user_id, datetime.now().date(), body_mass)
-
-
-async def add_record(user_id: int, date: datetime.date, body_mass: float) -> None:
+async def add_bodymass_record(user_id: int, date: datetime.date, body_mass: float) -> None:
     async with aiosqlite.connect(sqlite_db_path) as db:
         query = f"INSERT INTO {sqlite_db_users_mass} (user_id, date, body_mass) " \
                 f"VALUES ('{user_id}', '{date.strftime(date_format)}', {body_mass}); "
@@ -45,13 +35,13 @@ async def add_record(user_id: int, date: datetime.date, body_mass: float) -> Non
         await db.commit()
 
 
-async def delete_user_data(user_id: int) -> None:
+async def delete_user_bodymass_data(user_id: int) -> None:
     async with aiosqlite.connect(sqlite_db_path) as db:
         await db.execute(f"DELETE FROM {sqlite_db_users_mass} WHERE user_id = '{user_id}'")
         await db.commit()
 
 
-async def fetch_user_data(user_id: int):
+async def fetch_user_bodymass_data(user_id: int):
     async with aiosqlite.connect(sqlite_db_path) as db:
         async with db.cursor() as cursor:
             await cursor.execute(f"SELECT date, body_mass FROM {sqlite_db_users_mass} "
@@ -65,7 +55,7 @@ def random_hash() -> str:
     return uuid.uuid4().hex[:8]
 
 
-async def plot_user_data(user_id: int, only_two_weeks: bool = False, plot_label: str = 'Bodyweight, kg') \
+async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, plot_label: str = 'Bodyweight, kg') \
         -> tuple[str, Optional[np.array], float]:
     """Plot user data to an image.
 
@@ -82,7 +72,7 @@ async def plot_user_data(user_id: int, only_two_weeks: bool = False, plot_label:
 
     date_list: list[datetime] = []
     mass_list: list[float] = []
-    async for (date_str, body_mass) in fetch_user_data(user_id):
+    async for (date_str, body_mass) in fetch_user_bodymass_data(user_id):
         datetime_object = datetime.strptime(date_str, date_format)
         if only_two_weeks:
             if datetime.now() - datetime_object > timedelta(days=14):
@@ -91,7 +81,7 @@ async def plot_user_data(user_id: int, only_two_weeks: bool = False, plot_label:
         date_list.append(datetime_object)
         mass_list.append(body_mass)
 
-    regression_coef = draw_plot_mass(date_list, mass_list, plot_file_path, plot_label)
+    regression_coef = draw_plot_bodymass(date_list, mass_list, plot_file_path, plot_label)
     speed_kg_week = round(regression_coef[0] * 7, 2) if regression_coef is not None else None
     if len(mass_list) < 4:
         speed_kg_week = None
@@ -99,7 +89,7 @@ async def plot_user_data(user_id: int, only_two_weeks: bool = False, plot_label:
     return plot_file_path, speed_kg_week, float(np.mean(mass_list))
 
 
-def draw_plot_mass(date: list[datetime], mass: list[float], file_path: str, plot_label: str) -> Optional[np.array]:
+def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, plot_label: str) -> Optional[np.array]:
     x = list(map(date2num, date))
     y = mass
 
@@ -132,7 +122,7 @@ def draw_plot_mass(date: list[datetime], mass: list[float], file_path: str, plot
     return regression_coef
 
 
-async def user_data_to_csv(user_id: int) -> str:
+async def user_bodymass_data_to_csv(user_id: int) -> str:
     """Save user data from the database to a csv file.
 
     Keyword arguments:
@@ -146,7 +136,7 @@ async def user_data_to_csv(user_id: int) -> str:
                                  csv_tmp_filename_template.format(user_id=user_id, hash=random_hash()))
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file_object:
         csv_writer = csv.writer(csv_file_object)
-        async for row in fetch_user_data(user_id):
+        async for row in fetch_user_bodymass_data(user_id):
             csv_writer.writerow(row)
 
     return csv_file_path
@@ -156,7 +146,7 @@ class CSVParsingError(Exception):
     pass
 
 
-async def user_data_from_csv_url(user_id: int, csv_url: str, max_body_weight: int) -> None:
+async def user_bodymass_data_from_csv_url(user_id: int, csv_url: str, max_body_weight: int) -> None:
     with requests.get(csv_url) as request:
         csv_reader = csv.reader(iterdecode(request.iter_lines(), 'utf-8'))
         for row in csv_reader:
@@ -168,4 +158,4 @@ async def user_data_from_csv_url(user_id: int, csv_url: str, max_body_weight: in
             except Exception:
                 raise CSVParsingError()
 
-            await add_record(user_id, date, body_weight)
+            await add_bodymass_record(user_id, date, body_weight)
