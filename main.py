@@ -3,16 +3,17 @@ import logging.handlers
 import os
 import sys
 from datetime import datetime
-from typing import Optional
+import typing as t
 
 from telebot import logger
 from telebot import types
 from telebot.async_telebot import AsyncTeleBot
 
 import src.config
-from src.datautils.bodymass import date_format, add_bodymass_record_now, delete_user_bodymass_data, \
+from src.datautils.bodymass import add_bodymass_record_now, delete_user_bodymass_data, \
     plot_user_bodymass_data, user_bodymass_data_to_csv, \
     CSVParsingError, user_bodymass_data_from_csv_url
+from src.datautils import date_format
 from src.datautils.conversation import get_conversation_data, write_conversation_data, ConversationState, Language
 from src.glossaries import Glossary
 
@@ -155,7 +156,7 @@ async def reply_enter_weight(message: types.Message, user_data: dict):
     user_data['conversation_state'] = ConversationState.awaiting_body_weight
 
 
-def text_deficit_maintenance_surplus(speed_week_kg: Optional[float], mean_mass: float, user_data: dict) -> str:
+def text_deficit_maintenance_surplus(speed_week_kg: t.Optional[float], mean_mass: float, user_data: dict) -> str:
     text = ""
     if speed_week_kg is not None:
         maintenance_threshold = mean_mass * src.config.MAINTENANCE_THRESHOLD

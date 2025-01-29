@@ -3,7 +3,7 @@ import os
 import uuid
 from codecs import iterdecode
 from datetime import datetime, timedelta
-from typing import Optional
+import typing as t
 
 import aiosqlite
 import numpy as np
@@ -11,7 +11,8 @@ import requests
 from matplotlib import pyplot
 from matplotlib.dates import date2num, DateFormatter
 
-from src.datautils import sqlite_db_path
+from src.datautils import sqlite_db_path, date_format
+from src.datautils.challenge import Challenge
 
 sqlite_db_users_mass = 'users_mass'
 csv_tmp_folder = 'data/tmp/'
@@ -19,7 +20,6 @@ csv_tmp_filename_template = 'bodymass_{user_id}_{hash}.csv'
 csv_uploaded_tmp_filename_template = 'uploaded_{user_id}_{hash}.csv'
 plot_tmp_folder = 'data/tmp/'
 plot_tmp_filename_template = '{user_id}_{hash}.png'
-date_format = "%Y/%m/%d"
 
 
 async def add_bodymass_record_now(user_id: int, body_mass: float) -> None:
@@ -56,7 +56,7 @@ def random_hash() -> str:
 
 
 async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, plot_label: str = 'Bodyweight, kg') \
-        -> tuple[str, Optional[np.array], float]:
+        -> tuple[str, t.Optional[np.array], float]:
     """Plot user data to an image.
 
     Keyword arguments:
@@ -89,7 +89,20 @@ async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, pl
     return plot_file_path, speed_kg_week, float(np.mean(mass_list))
 
 
-def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, plot_label: str) -> Optional[np.array]:
+def desired_regression(challenge: Challenge):
+    y = challenge.start_weight, challenge.target_weight
+    x = list(map(date2num, [ challenge.start_date_object(), challenge.end_date_object()]))
+    coef = np.polyfit(x, y, 1)
+    func = np.poly1d(coef)
+    return x, func(x)
+
+
+def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, plot_label: str,
+                       challenge: Challenge | None = None,
+                       start_label: str = 'Start',
+                       target_label: str = 'Goal') -> t.Optional[np.array]:
+    if challenge:
+        date = filter(challenge.date_filter(), date)
     x = list(map(date2num, date))
     y = mass
 
@@ -98,7 +111,16 @@ def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, 
 
     fig, ax = pyplot.subplots(figsize=[8, 5])
 
-    pyplot.scatter(x, y)
+    if challenge:
+        desired_x, desired_y = desired_regression(challenge)
+        pyplot.plot(desired_x, desired_y, linestyle='dashed', color='red', markevery=[0,-1], marker='x')
+
+        def annotate(label, x_, y_):
+            pyplot.annotate(label, (x_, y_), color='red', ha='center', va='top',
+                            xytext=(0, -5), textcoords="offset points")
+
+        annotate(f'{start_label}', desired_x[0], desired_y[0])
+        annotate(f'{target_label}', desired_x[1], desired_y[1])
 
     if len(x) > 1:
         limits = (min(mass) // 5 * 5 - 6, max(mass) // 5 * 5 + 6)
@@ -106,6 +128,8 @@ def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, 
         limits = (64, 76)
 
     pyplot.ylim(limits)
+
+    pyplot.scatter(x, y)
 
     if len(x) > 1:
         pyplot.plot(x, regression_func(x))

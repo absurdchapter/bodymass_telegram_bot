@@ -9,3 +9,4 @@ if not os.path.exists(sqlite_db_path) or os.environ.get('UPDATE_DATABASE'):
         with open(sql_header_path, 'r') as sql_header:
             for command in sql_header.read().split(';'):
                 db_.execute(command)
+date_format = "%Y/%m/%d"
