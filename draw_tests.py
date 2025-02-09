@@ -1,13 +1,12 @@
 import inspect
-import typing as t
 from datetime import datetime
-from functools import wraps
 from pathlib import Path
 
 from src.datautils.bodymass import draw_plot_bodymass
 from src.datautils.challenge import Challenge
 
 SAVE_DIR = 'data/tmp'
+
 
 # TODO assert regression coeffs
 
@@ -17,6 +16,7 @@ def _get_funcname() -> str:
 
 def _get_file_path(funcname: str):
     return str(Path(SAVE_DIR) / (funcname + '.png'))
+
 
 def test1():
     print(f"Running {_get_funcname()}...", )
@@ -90,7 +90,6 @@ def test3():
         99.5
     ]
     challenge = Challenge(
-        challenge_id=0,
         user_id="",
         is_active=True,
 

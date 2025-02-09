@@ -1,7 +1,7 @@
 import random
 
-import _english
-import _russian
+import src.glossaries._english as _english
+import src.glossaries._russian as _russian
 from src.datautils.conversation import Language, DEFAULT_LANGUAGE
 
 
