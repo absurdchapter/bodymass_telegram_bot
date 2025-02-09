@@ -19,6 +19,16 @@ class ConversationState:
     awaiting_erase_confirmation = 'awaiting_erase_confirmation'
     awaiting_csv_table = 'awaiting_csv_table'
     awaiting_language = 'awaiting_language'
+    existing_challenge = 'existing_challenge'
+    start_challenge_confirm = 'start_challenge_confirm'
+    disable_challenge_confirm = 'disable_challenge_confirm'
+
+    awaiting_starting_weight = 'awaiting_starting_weight'
+    awaiting_starting_date = 'awaiting_starting_date'
+    awaiting_target_weight = 'awaiting_target_weight'
+    awaiting_target_date = 'awaiting_target_date'
+
+    awaiting_challenge_finalize_confirmation = 'awaiting_challenge_finalize_confirmation'
 
 
 _assert_enum_consistency(ConversationState)

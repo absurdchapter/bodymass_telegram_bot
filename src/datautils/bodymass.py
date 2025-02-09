@@ -1,9 +1,9 @@
 import csv
 import os
+import typing as t
 import uuid
 from codecs import iterdecode
 from datetime import datetime, timedelta
-import typing as t
 
 import aiosqlite
 import numpy as np
@@ -91,7 +91,8 @@ async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, pl
 
 def desired_regression(challenge: Challenge):
     y = challenge.start_weight, challenge.target_weight
-    x = list(map(date2num, [ challenge.start_date_object(), challenge.end_date_object()]))
+    x = list(map(date2num, [datetime.strptime(challenge.start_date, date_format),
+                            datetime.strptime(challenge.end_date, date_format)]))
     coef = np.polyfit(x, y, 1)
     func = np.poly1d(coef)
     return x, func(x)
@@ -113,7 +114,7 @@ def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, 
 
     if challenge:
         desired_x, desired_y = desired_regression(challenge)
-        pyplot.plot(desired_x, desired_y, linestyle='dashed', color='red', markevery=[0,-1], marker='x')
+        pyplot.plot(desired_x, desired_y, linestyle='dashed', color='red', markevery=[0, -1], marker='x')
 
         def annotate(label, x_, y_):
             pyplot.annotate(label, (x_, y_), color='red', ha='center', va='top',

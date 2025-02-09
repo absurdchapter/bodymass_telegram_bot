@@ -1,30 +1,80 @@
 import dataclasses
-from datetime import datetime
 import typing as t
+from datetime import datetime
 
-from src.datautils import date_format
+import aiosqlite
+
+from src.datautils import date_format, sqlite_db_path
+
+sqlite_db_users_challenges = 'users_challenges'
 
 
 @dataclasses.dataclass
 class Challenge:
-    challenge_id: int
+    user_id: str = ''
+    is_active: int = 0
 
-    user_id: str
-    is_active: bool
+    start_date: str = ''
+    end_date: str = ''
 
-    start_date: str
-    end_date: str
-
-    start_weight: float
-    target_weight: float
+    start_weight: float = 0
+    target_weight: float = 0
 
     def date_filter(self) -> t.Callable[[datetime], bool]:
         def func(datetime_object: datetime) -> bool:
-            return self.start_date_object() <= datetime_object <= self.end_date_object()
+            return datetime.strptime(self.start_date, date_format) <= datetime_object <= datetime.strptime(
+                self.end_date, date_format)
+
         return func
 
-    def start_date_object(self) -> datetime:
-        return datetime.strptime(self.start_date, date_format)
+    @classmethod
+    def represent_column_for_sql(cls, value, column: str):
+        if column in ['user_id', 'start_date', 'end_date']:
+            return f"'{value}'"
+        if column in ['is_active']:
+            return f"{int(value)}"
+        if column in ['start_weight', 'target_weight']:
+            return f"{float(value)}"
 
-    def end_date_object(self) -> datetime:
-        return datetime.strptime(self.end_date, date_format)
+
+async def get_challenges(user_id: int) -> list[Challenge]:
+    async with aiosqlite.connect(sqlite_db_path) as db:
+        async with db.cursor() as cursor:
+            query = f"SELECT user_id, is_active, start_date, end_date, start_weight, target_weight " \
+                    f"FROM {sqlite_db_users_challenges} " \
+                    f"WHERE user_id = '{user_id}';"
+            await cursor.execute(query)
+            challenges = [Challenge(*challenge) for challenge in await cursor.fetchall()]
+
+            return challenges
+
+
+async def get_challenge(user_id: int) -> t.Optional[Challenge]:
+    challenges = await get_challenges(user_id)
+    if len(challenges) == 0:
+        return None
+
+    result = challenges[-1]
+    assert int(result.user_id) == int(user_id)
+
+    return result
+
+
+async def insert_challenge(challenge: Challenge) -> None:
+    columns = 'user_id', 'is_active', 'start_date', 'end_date', 'start_weight', 'target_weight'
+    async with aiosqlite.connect(sqlite_db_path) as db:
+        columns_joined: str = ', '.join(columns)
+        values_for_sql = [Challenge.represent_column_for_sql(getattr(challenge, col), col) for col in columns]
+        values_joined: str = ', '.join(values_for_sql)
+        query = f"INSERT INTO {sqlite_db_users_challenges} ({columns_joined}) " \
+                f"VALUES ({values_joined}); "
+
+        await db.execute(query)
+        await db.commit()
+
+
+async def get_challenge_not_none(user_id: int):
+    challenge = await get_challenge(user_id)
+    if challenge is None:
+        challenge = Challenge(user_id=str(user_id))
+    return challenge
