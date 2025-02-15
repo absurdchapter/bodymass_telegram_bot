@@ -14,7 +14,8 @@ from src.datautils import date_format, update_database_schema
 from src.datautils.bodymass import add_bodymass_record_now, delete_user_bodymass_data, \
     plot_user_bodymass_data, user_bodymass_data_to_csv, \
     CSVParsingError, user_bodymass_data_from_csv_url
-from src.datautils.challenge import get_challenge, insert_challenge, get_challenge_not_none, Challenge
+from src.datautils.challenge import get_challenge, insert_challenge, get_challenge_not_none, Challenge, \
+    delete_challenges
 from src.datautils.conversation import get_conversation_data, write_conversation_data, ConversationState, Language
 from src.glossaries import Glossary
 
@@ -145,6 +146,7 @@ async def reply(message: types.Message, user_data: dict):
 
 
 async def reply_info(message: types.Message, user_data: dict):
+    # TODO new /challenge command
     text = glossary(user_data).info()
 
     await bot.send_message(message.chat.id, text,
@@ -404,7 +406,6 @@ async def reply_erase(message: types.Message, user_data: dict):
 
 
 async def reply_erase_confirmation(message, user_data: dict):
-    # TODO erase challenge
     if message.text.strip().lower() != glossary(user_data).confirmation_word():
         text = glossary(user_data).cancel_delete()
         await bot.reply_to(message, text, reply_markup=default_markup(user_data))
@@ -413,6 +414,7 @@ async def reply_erase_confirmation(message, user_data: dict):
 
     csv_file_path = await user_bodymass_data_to_csv(message.chat.id)
     await delete_user_bodymass_data(message.chat.id)
+    await delete_challenges(message.chat.it)
 
     file_size = os.path.getsize(csv_file_path)
     if file_size == 0:
@@ -544,6 +546,11 @@ async def reply_target_weight(message: types.Message, user_data: dict):
     challenge = await get_challenge_not_none(message.chat.id)
     assert challenge.start_weight, "start_weight expected to be specified at this point of interaction with user"
     assert challenge.start_date, "start_date expected to be specified at this point of interaction with user"
+
+    if target_weight == challenge.start_weight:
+        await bot.reply_to(message, "Target weight cannot be the same as the starting weight.\nTry again")
+        return
+
     challenge.target_weight = target_weight
     challenge.is_active = 0
 
@@ -567,13 +574,28 @@ async def reply_target_date(message: types.Message, user_data: dict):
     assert challenge.start_weight, "start_weight expected to be specified at this point of interaction with user"
     assert challenge.start_date, "start_date expected to be specified at this point of interaction with user"
     assert challenge.target_weight, "target_weight expected to be specified at this point of interaction with user"
+
+    if datetime.strptime(challenge.start_date, date_format) > datetime.strptime(target_date, date_format):
+        await bot.reply_to(message, f"Target date cannot be earlier than start date ({challenge.start_date}). "
+                                    f"\nTry again")
+        return
+
     challenge.end_date = target_date
     challenge.is_active = 0
 
     await insert_challenge(challenge)
 
-    answer = 'Please confirm ("yes"): (TODO show challenge info)'
-    await bot.reply_to(message, answer, reply_markup=reply_markup(['Yes', 'Cancel']))
+    if challenge.start_weight < challenge.target_weight:
+        verb = "gain weight"
+    else:
+        verb = "lose weight"
+
+    answer = "Please confirm (\"yes\"): \n\n"
+    answer += f"Your challenge is to {verb} "
+    answer += "to <b>{0}</b> kg by <b>{1}</b>.\n".format(challenge.target_weight, challenge.end_date)
+    answer += "You start on <b>{0}</b> weighing <b>{1}</b>"
+
+    await bot.reply_to(message, answer, parse_mode="HTML", reply_markup=reply_markup(['Yes', 'Cancel']))
     user_data['conversation_state'] = ConversationState.awaiting_challenge_finalize_confirmation
 
 
