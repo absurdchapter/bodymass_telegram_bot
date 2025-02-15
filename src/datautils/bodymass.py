@@ -83,30 +83,42 @@ async def plot_user_bodymass_data(user_id: int, *,
     date_list: list[datetime] = []
     mass_list: list[float] = []
     async for (date_str, body_mass) in fetch_user_bodymass_data(user_id):
-        datetime_object = datetime.strptime(date_str, date_format)
-
-        date_list.append(datetime_object)
+        date_list.append(datetime.strptime(date_str, date_format))
         mass_list.append(body_mass)
 
     challenge = None
     if not ignore_challenge:
         challenge = await get_active_challenge(user_id)
 
-    date_limits = None
-    if only_two_weeks:
-        date_limits = datetime.now() - timedelta(days=14), datetime.now()
-    if only_challenge_range:
-        date_limits = (datetime.strptime(challenge.start_date, date_format),
-                       datetime.strptime(challenge.end_date, date_format))
-
-    regression_coef = draw_plot_bodymass(date_list, mass_list, plot_file_path, plot_label,
+    regression_coef = draw_plot_bodymass(date_list,
+                                         mass_list,
+                                         plot_file_path,
+                                         plot_label,
                                          challenge=challenge,
-                                         date_limits=date_limits)
+                                         date_limits=_get_date_limits(
+                                             challenge,
+                                             only_challenge_range,
+                                             only_two_weeks)
+                                         )
+
     speed_kg_week = round(regression_coef[0] * 7, 2) if regression_coef is not None else None
     if len(mass_list) < 4:
         speed_kg_week = None
 
     return plot_file_path, speed_kg_week, float(np.mean(mass_list))
+
+
+def _get_date_limits(
+        challenge: t.Optional[Challenge],
+        only_challenge_range: bool,
+        only_two_weeks: bool
+) -> t.Optional[tuple[datetime, datetime]]:
+    assert not (only_challenge_range and only_two_weeks)
+    if only_two_weeks:
+        return datetime.now() - timedelta(days=14), datetime.now()
+    if only_challenge_range and challenge:
+        return (datetime.strptime(challenge.start_date, date_format),
+                datetime.strptime(challenge.end_date, date_format))
 
 
 def desired_regression(challenge: Challenge):
@@ -140,34 +152,26 @@ def draw_plot_bodymass(date: t.Iterable[datetime], mass: list[float], file_path:
     if date_limits:
         def fits_limits(datetime_obj: datetime) -> bool:
             return date_limits[0] <= datetime_obj <= date_limits[1]
+
         date, mass = filter_dates(fits_limits, date, mass)
 
     x = list(map(date2num, date))
     y = mass
 
-    regression_coef = np.polyfit(x, y, 1) if len(x) > 1 else None
-    regression_func = np.poly1d(regression_coef) if len(x) > 1 else None
-
     fig, ax = pyplot.subplots(figsize=[8, 5])
 
     if challenge:
-        desired_x, desired_y = desired_regression(challenge)
-        pyplot.plot(desired_x, desired_y, linestyle='dashed', color='red', markevery=[0, -1], marker='x')
+        _draw_challenge(challenge, start_label, target_label)
 
-        def annotate(label, x_, y_):
-            pyplot.annotate(label, (x_, y_), color='red', ha='center', va='top',
-                            xytext=(0, -5), textcoords="offset points")
-
-        annotate(f'{start_label}', desired_x[0], desired_y[0])
-        annotate(f'{target_label}', desired_x[1], desired_y[1])
-
-    pyplot.ylim(*_get_y_limits(challenge, y))
     pyplot.xlim(*_get_x_limits(date_limits, x))
+    pyplot.ylim(*_get_y_limits(challenge, y))
 
     pyplot.scatter(x, y)
 
+    regression_coef = None
     if len(x) > 1:
-        pyplot.plot(x, regression_func(x))
+        regression_coef = np.polyfit(x, y, 1)
+        pyplot.plot(x, np.poly1d(regression_coef)(x))
 
     pyplot.ylabel(plot_label)
 
@@ -182,11 +186,23 @@ def draw_plot_bodymass(date: t.Iterable[datetime], mass: list[float], file_path:
     return regression_coef
 
 
+def _draw_challenge(challenge: Challenge, start_label: str, target_label: str):
+    desired_x, desired_y = desired_regression(challenge)
+    pyplot.plot(desired_x, desired_y, linestyle='dashed', color='red', markevery=[0, -1], marker='x')
+
+    def annotate(label: str, x_, y_):
+        pyplot.annotate(label, (x_, y_), color='red', ha='center', va='top',
+                        xytext=(0, -5), textcoords="offset points")
+
+    annotate(f'{start_label}', desired_x[0], desired_y[0])
+    annotate(f'{target_label}', desired_x[1], desired_y[1])
+
+
 def _get_y_limits(challenge: t.Optional[Challenge], y: t.Sequence[float]) -> t.Sequence[float]:
     """
     :returns: arguments for pyplot.ylim()
     """
-    if len(y) > 1:
+    if len(y) > 0:
         return min(y) // 5 * 5 - 6, max(y) // 5 * 5 + 6
     elif challenge is None:
         return 64, 76

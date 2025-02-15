@@ -60,6 +60,12 @@ async def get_challenge(user_id: int) -> t.Optional[Challenge]:
     return result
 
 
+async def delete_challenges(user_id: int):
+    async with aiosqlite.connect(sqlite_db_path) as db:
+        await db.execute(f"DELETE FROM {sqlite_db_users_challenges} WHERE user_id = '{user_id}'")
+        await db.commit()
+
+
 async def get_active_challenge(user_id: int) -> t.Optional[Challenge]:
     challenge = await get_challenge(user_id)
     try:

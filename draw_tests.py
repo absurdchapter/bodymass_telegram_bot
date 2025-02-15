@@ -173,6 +173,7 @@ def test_no_points_with_challenge_and_limits():
     date_limits = datetime(year=2021, month=5, day=2), datetime(year=2021, month=5, day=7)
     file_path = _get_file_path(_get_funcname())
     draw_plot_bodymass(dates, measurements, file_path, "Bodyweight, kg", challenge=challenge, date_limits=date_limits)
+    print('Result saved to', file_path)
 
 
 def test_one_point():
