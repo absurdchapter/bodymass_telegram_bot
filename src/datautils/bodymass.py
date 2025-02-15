@@ -12,7 +12,7 @@ from matplotlib import pyplot
 from matplotlib.dates import date2num, DateFormatter
 
 from src.datautils import sqlite_db_path, date_format
-from src.datautils.challenge import Challenge
+from src.datautils.challenge import Challenge, get_active_challenge
 
 sqlite_db_users_mass = 'users_mass'
 csv_tmp_folder = 'data/tmp/'
@@ -55,17 +55,27 @@ def random_hash() -> str:
     return uuid.uuid4().hex[:8]
 
 
-async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, plot_label: str = 'Bodyweight, kg') \
+async def plot_user_bodymass_data(user_id: int, *,
+                                  only_two_weeks: bool = False,
+                                  only_challenge_range: bool = False,
+                                  plot_label: str = 'Bodyweight, kg',
+                                  ignore_challenge: bool = False
+                                  ) \
         -> tuple[str, t.Optional[np.array], float]:
     """Plot user data to an image.
 
     Keyword arguments:
     :param user_id: user id
     :param only_two_weeks: draw progress only for the past 2 weeks
+    :param only_challenge_range: draw only challenge range (cannot be used with only_two_weeks)
     :param plot_label: plot label
+    :param ignore_challenge: if True, challenge will be ignored
 
     :return: image temporary file path, speed kg/week, mean body mass
     """
+    if only_challenge_range and only_two_weeks:
+        raise AttributeError("only_challenge_range cannot be used with only_two_weeks")
+
     os.makedirs(plot_tmp_folder, exist_ok=True)
     plot_file_path = os.path.join(plot_tmp_folder,
                                   plot_tmp_filename_template.format(user_id=user_id, hash=random_hash()))
@@ -74,14 +84,24 @@ async def plot_user_bodymass_data(user_id: int, only_two_weeks: bool = False, pl
     mass_list: list[float] = []
     async for (date_str, body_mass) in fetch_user_bodymass_data(user_id):
         datetime_object = datetime.strptime(date_str, date_format)
-        if only_two_weeks:
-            if datetime.now() - datetime_object > timedelta(days=14):
-                continue
 
         date_list.append(datetime_object)
         mass_list.append(body_mass)
 
-    regression_coef = draw_plot_bodymass(date_list, mass_list, plot_file_path, plot_label)
+    challenge = None
+    if not ignore_challenge:
+        challenge = await get_active_challenge(user_id)
+
+    date_limits = None
+    if only_two_weeks:
+        date_limits = datetime.now() - timedelta(days=14), datetime.now()
+    if only_challenge_range:
+        date_limits = (datetime.strptime(challenge.start_date, date_format),
+                       datetime.strptime(challenge.end_date, date_format))
+
+    regression_coef = draw_plot_bodymass(date_list, mass_list, plot_file_path, plot_label,
+                                         challenge=challenge,
+                                         date_limits=date_limits)
     speed_kg_week = round(regression_coef[0] * 7, 2) if regression_coef is not None else None
     if len(mass_list) < 4:
         speed_kg_week = None
@@ -98,12 +118,30 @@ def desired_regression(challenge: Challenge):
     return x, func(x)
 
 
-def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, plot_label: str,
+def filter_dates(date_filter: t.Callable[[datetime], bool],
+                 date: t.Iterable[datetime],
+                 mass: t.Iterable[float]) -> tuple[t.Iterable[datetime], t.Iterable[float]]:
+    filtered_date = []
+    filtered_mass = []
+
+    for date_elem, mass_elem in zip(date, mass):
+        if date_filter(date_elem):
+            filtered_date.append(date_elem)
+            filtered_mass.append(mass_elem)
+
+    return filtered_date, filtered_mass
+
+
+def draw_plot_bodymass(date: t.Iterable[datetime], mass: list[float], file_path: str, plot_label: str,
                        challenge: Challenge | None = None,
                        start_label: str = 'Start',
-                       target_label: str = 'Goal') -> t.Optional[np.array]:
-    if challenge:
-        date = filter(challenge.date_filter(), date)
+                       target_label: str = 'Goal',
+                       date_limits: t.Optional[tuple[datetime, datetime]] = None) -> t.Optional[np.array]:
+    if date_limits:
+        def fits_limits(datetime_obj: datetime) -> bool:
+            return date_limits[0] <= datetime_obj <= date_limits[1]
+        date, mass = filter_dates(fits_limits, date, mass)
+
     x = list(map(date2num, date))
     y = mass
 
@@ -123,12 +161,8 @@ def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, 
         annotate(f'{start_label}', desired_x[0], desired_y[0])
         annotate(f'{target_label}', desired_x[1], desired_y[1])
 
-    if len(x) > 1:
-        limits = (min(mass) // 5 * 5 - 6, max(mass) // 5 * 5 + 6)
-    else:
-        limits = (64, 76)
-
-    pyplot.ylim(limits)
+    pyplot.ylim(*_get_y_limits(challenge, y))
+    pyplot.xlim(*_get_x_limits(date_limits, x))
 
     pyplot.scatter(x, y)
 
@@ -141,10 +175,38 @@ def draw_plot_bodymass(date: list[datetime], mass: list[float], file_path: str, 
     pyplot.xticks(rotation=45)
     pyplot.grid()
     pyplot.tight_layout()
+
     pyplot.savefig(file_path, dpi=300)
     pyplot.close('all')
 
     return regression_coef
+
+
+def _get_y_limits(challenge: t.Optional[Challenge], y: t.Sequence[float]) -> t.Sequence[float]:
+    """
+    :returns: arguments for pyplot.ylim()
+    """
+    if len(y) > 1:
+        return min(y) // 5 * 5 - 6, max(y) // 5 * 5 + 6
+    elif challenge is None:
+        return 64, 76
+    return []
+
+
+def _get_x_limits(date_limits: t.Optional[tuple[datetime, datetime]], x: t.Sequence[float]) -> t.Sequence[float]:
+    """
+    :returns: arguments for pyplot.xlim()
+    """
+    if not date_limits:
+        return []
+
+    min_x = date2num(date_limits[0])
+    max_x = date2num(date_limits[1])
+    if len(x) > 0:
+        min_x = max(min_x, min(x)) - 1
+        max_x = min(max_x, max(x)) + 1
+
+    return min_x, max_x
 
 
 async def user_bodymass_data_to_csv(user_id: int) -> str:

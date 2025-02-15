@@ -55,9 +55,17 @@ async def get_challenge(user_id: int) -> t.Optional[Challenge]:
         return None
 
     result = challenges[-1]
-    assert int(result.user_id) == int(user_id)
+    assert int(result.user_id) == int(user_id), "user_id mismatch in the database"
 
     return result
+
+
+async def get_active_challenge(user_id: int) -> t.Optional[Challenge]:
+    challenge = await get_challenge(user_id)
+    try:
+        return challenge if challenge.is_active else None
+    except AttributeError:
+        return
 
 
 async def insert_challenge(challenge: Challenge) -> None:

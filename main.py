@@ -225,7 +225,7 @@ def text_deficit_maintenance_surplus(speed_week_kg: t.Optional[float], mean_mass
 
 async def reply_body_weight(message: types.Message, user_data: dict):
     try:
-        body_weight = await validate_body_weight(message)
+        body_weight = validate_body_weight(message)
     except ValueError:
         await bot.reply_to(message, glossary(user_data).please_enter_valid_positive_number())
         return
@@ -404,6 +404,7 @@ async def reply_erase(message: types.Message, user_data: dict):
 
 
 async def reply_erase_confirmation(message, user_data: dict):
+    # TODO erase challenge
     if message.text.strip().lower() != glossary(user_data).confirmation_word():
         text = glossary(user_data).cancel_delete()
         await bot.reply_to(message, text, reply_markup=default_markup(user_data))
@@ -470,7 +471,8 @@ async def reply_existing_challenge(message: types.Message, user_data: dict):
         await bot.reply_to(message, "TODO: show progress", reply_markup=default_markup(user_data))
         user_data['conversation_state'] = ConversationState.init
     elif dialogue_option == 'Disable challenge':
-        await bot.reply_to(message, "TODO: disable challenge", reply_markup=default_markup(user_data))
+        await insert_challenge(Challenge(user_id=str(message.chat.id), is_active=0))
+        await bot.reply_to(message, "Challenge disabled\n\n/start - menu\n/challenge - start new challenge")
         user_data['conversation_state'] = ConversationState.init
     else:
         await reply_info(message, user_data)
@@ -578,7 +580,9 @@ async def reply_target_date(message: types.Message, user_data: dict):
 async def reply_challenge_finalize_confirmation(message: types.Message, user_data: dict):
     text = message.text.strip()
     if text.lower() != 'yes':
-        await bot.reply_to(message, "Action cancelled\n\n/start - show menu")
+        await bot.reply_to(message, "Action cancelled\n\n"
+                                    "/start - show menu\n"
+                                    "/challenge - challenge options")
         user_data['conversation_state'] = ConversationState.init
         return
 
