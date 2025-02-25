@@ -107,6 +107,10 @@ class Glossary:
     def confirmation_word(self) -> str:
         return self._module().CONFIRMATION_WORD
 
+    @classmethod
+    def confirmation_words(cls) -> list[str]:
+        return [module.CONFIRMATION_WORD for module in _modules()]
+
     def reply_erase(self) -> str:
         return self._module().REPLY_ERASE
 
@@ -147,3 +151,73 @@ class Glossary:
         message_id //= 2
         n = len(self._module().NOTFAT_OPTIONS)
         return self._module().NOTFAT_OPTIONS[message_id % n]
+
+    def challenge_reply_template(self) -> str:
+        return self._module().CHALLENGE_REPLY_TEMPLATE
+
+    def start_challenge_question(self) -> str:
+        return self._module().START_CHALLENGE_QUESTION
+
+    def disable_challenge_question(self) -> str:
+        return self._module().DISABLE_CHALLENGE_QUESTION
+
+    def confirmation_markup(self) -> list[str]:
+        return self._module().CONFIRMATION_MARKUP
+
+    def today_lowercase(self) -> str:
+        return self._module().TODAY_LOWERCASE
+
+    @classmethod
+    def todays_lowercase(cls) -> list[str]:
+        return [module.TODAY_LOWERCASE for module in _modules()]
+
+    def enter_starting_weight(self) -> str:
+        return self._module().ENTER_STARTING_WEIGHT
+
+    def enter_starting_date(self) -> str:
+        return self._module().ENTER_STARTING_DATE
+
+    def please_enter_valid_date(self) -> str:
+        return self._module().PLEASE_ENTER_VALID_DATE
+
+    def enter_target_weight(self) -> str:
+        return self._module().ENTER_TARGET_WEIGHT
+
+    def when_do_you_want_to_reach_template(self) -> str:
+        return self._module().WHEN_DO_YOU_WANT_TO_REACH_TEMPLATE
+
+    def target_date_cannot_be_earlier_template(self) -> str:
+        return self._module().TARGET_DATE_CANNOT_BE_EARLIER_TEMPLATE
+
+    def please_confirm(self) -> str:
+        return self._module().PLEASE_CONFIRM
+
+    def you_want_to_lose_weight_template(self) -> str:
+        return self._module().YOU_WANT_TO_LOSE_WEIGHT_TEMPLATE
+
+    def you_want_to_gain_weight_template(self) -> str:
+        return self._module().YOU_WANT_TO_GAIN_WEIGHT_TEMPLATE
+
+    def you_want_to_maintain_weight(self) -> str:
+        return self._module().YOU_WANT_TO_MAINTAIN_WEIGHT
+
+    def you_start_and_finish_template(self) -> str:
+        return self._module().YOU_START_AND_FINISH_TEMPLATE
+
+    def your_challenge_will_last_template(self) -> str:
+        return self._module().YOUR_CHALLENGE_WILL_LAST_TEMPLATE
+
+    def your_desired_speed_is_template(self) -> str:
+        return self._module().YOUR_DESIRED_SPEED_IS_TEMPLATE
+
+    def challenge_disabled(self) -> str:
+        return self._module().CHALLENGE_DISABLED
+
+    def action_cancelled(self) -> str:
+        return self._module().ACTION_CANCELLED
+
+    def challenge_successfully_created(self) -> str:
+        return self._module().CHALLENGE_SUCCESSFULLY_CREATED
+
+    def yes_cancel_markup(self) -> list[str]:
+        return self._module().YES_CANCLEL_MARKUP

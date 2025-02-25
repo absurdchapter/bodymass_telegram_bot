@@ -1,10 +1,13 @@
 import inspect
+import math
 import sys
 from datetime import datetime
 from pathlib import Path
 
+import numpy
+
 from src.datautils.bodymass import draw_plot_bodymass
-from src.datautils.challenge import Challenge
+from src.datautils.challenge import Challenge, get_desired_speed_per_week
 
 SAVE_DIR = 'data/tmp'
 
@@ -76,8 +79,14 @@ def test_happy_with_challenge():
 
     assert len(dates) == len(measurements)
 
+    desired_speed = get_desired_speed_per_week(challenge)
+    assert math.isclose(desired_speed, -1.4)
+
     file_path = _get_file_path(_get_funcname())
-    draw_plot_bodymass(dates, measurements, file_path, "Bodyweight, kg", challenge)
+    regression_coef = draw_plot_bodymass(dates, measurements, file_path, "Bodyweight, kg", challenge)
+    assert numpy.allclose(regression_coef, [-2.26190476e-01, 4.34130714e+03])
+    speed_kg_week = round(regression_coef[0] * 7, 2)
+    assert speed_kg_week == -1.58
     print('Result saved to', file_path)
 
 

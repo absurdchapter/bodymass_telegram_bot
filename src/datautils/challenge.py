@@ -1,6 +1,7 @@
 import dataclasses
 import typing as t
 from datetime import datetime
+from decimal import Decimal
 
 import aiosqlite
 
@@ -35,6 +36,18 @@ class Challenge:
             return f"{int(value)}"
         if column in ['start_weight', 'target_weight']:
             return f"{float(value)}"
+
+
+def get_desired_speed_per_week(challenge: Challenge) -> float:
+    """
+    :raises: ZeroDivisionError in case challenge.end_date == challenge.start_date
+    :raises: ValueError if challenge dates are invalid
+    """
+    delta = datetime.strptime(challenge.end_date, date_format) - datetime.strptime(challenge.start_date, date_format)
+    delta_weeks = delta.total_seconds() / (60*60*24*7)
+    delta_kg = challenge.target_weight - challenge.start_weight
+
+    return delta_kg / delta_weeks
 
 
 async def get_challenges(user_id: int) -> list[Challenge]:

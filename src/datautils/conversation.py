@@ -19,9 +19,8 @@ class ConversationState:
     awaiting_erase_confirmation = 'awaiting_erase_confirmation'
     awaiting_csv_table = 'awaiting_csv_table'
     awaiting_language = 'awaiting_language'
-    existing_challenge = 'existing_challenge'
     start_challenge_confirm = 'start_challenge_confirm'
-    disable_challenge_confirm = 'disable_challenge_confirm'
+    clear_challenge_confirm = 'clear_challenge_confirm'
 
     awaiting_starting_weight = 'awaiting_starting_weight'
     awaiting_starting_date = 'awaiting_starting_date'
@@ -44,6 +43,7 @@ DEFAULT_LANGUAGE = Language.english
 
 _assert_enum_consistency(Language)
 languages = [k for k in vars(Language).keys() if not k.startswith('_')]
+
 
 
 async def get_conversation_data(user_id: int) -> dict:
