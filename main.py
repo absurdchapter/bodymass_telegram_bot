@@ -13,9 +13,9 @@ import src.config
 from src.datautils import date_format, update_database_schema
 from src.datautils.bodymass import add_bodymass_record_now, delete_user_bodymass_data, \
     plot_user_bodymass_data, user_bodymass_data_to_csv, \
-    CSVParsingError, user_bodymass_data_from_csv_url
+    CSVParsingError, user_bodymass_data_from_csv_url, add_bodymass_record
 from src.datautils.challenge import get_challenge, insert_challenge, get_challenge_not_none, Challenge, \
-    delete_challenges
+    delete_challenges, get_active_challenge, get_desired_speed_per_week
 from src.datautils.conversation import get_conversation_data, write_conversation_data, ConversationState, Language
 from src.glossaries import Glossary
 
@@ -103,6 +103,8 @@ async def reply(message: types.Message, user_data: dict):
             await reply_notfat(message, user_data)
         elif message_text == '/challenge':
             await reply_challenge(message, user_data)
+        elif message_text == '/clear_challenge':
+            await reply_clear_challenge(message, user_data)
         # ======================
         #  END SPECIAL COMMANDS
         # ======================
@@ -120,8 +122,6 @@ async def reply(message: types.Message, user_data: dict):
             await reply_start(message, user_data)
         elif conversation_state == ConversationState.awaiting_language:
             await reply_language_selected(message, user_data)
-        elif conversation_state == ConversationState.existing_challenge:
-            await reply_existing_challenge(message, user_data)
         elif conversation_state == ConversationState.start_challenge_confirm:
             await reply_start_challenge_confirm(message, user_data)
         elif conversation_state == ConversationState.awaiting_starting_weight:
@@ -134,8 +134,11 @@ async def reply(message: types.Message, user_data: dict):
             await reply_target_date(message, user_data)
         elif conversation_state == ConversationState.awaiting_challenge_finalize_confirmation:
             await reply_challenge_finalize_confirmation(message, user_data)
+        elif conversation_state == ConversationState.clear_challenge_confirm:
+            await reply_clear_challenge_confirm(message, user_data)
         else:
-            assert False, "Conversation state assertion"
+            logger.critical(f"Invalid conversation state: {conversation_state}. Forcing init state.")
+            user_data['conversation_state'] = ConversationState.init
     else:
         if conversation_state == ConversationState.awaiting_csv_table:
             await reply_csv_table(message, user_data)
@@ -146,7 +149,6 @@ async def reply(message: types.Message, user_data: dict):
 
 
 async def reply_info(message: types.Message, user_data: dict):
-    # TODO new /challenge command
     text = glossary(user_data).info()
 
     await bot.send_message(message.chat.id, text,
@@ -173,19 +175,53 @@ async def reply_notfat(message: types.Message, user_data: dict):
 async def reply_challenge(message: types.Message, user_data: dict):
     challenge = await get_challenge(message.chat.id)
 
-    if challenge and challenge.is_active:
-        text = f"Your goal is to reach <b>%.2f kg</b> by <b>%s</b>.\n" % (challenge.target_weight, challenge.end_date)
-        text += f"You started with <b>%.2f kg</b> on <b>%s</b>." % (challenge.start_weight, challenge.start_date)
-        text += "\n\n/start - return to menu"
-        await bot.send_message(message.chat.id,
-                               text,
-                               reply_markup=reply_markup(['View progress', 'Disable challenge']),
-                               parse_mode="HTML")
-        user_data['conversation_state'] = ConversationState.existing_challenge
-    else:
-        text = "Start challenge?"
-        await bot.send_message(message.chat.id, text, reply_markup=reply_markup(['Yes', 'No']), parse_mode="HTML")
-        user_data['conversation_state'] = ConversationState.start_challenge_confirm
+    if (not challenge) or (not challenge.is_active):
+        return await _reply_ask_new_challenge(message, user_data)
+
+    try:
+        desired_speed = get_desired_speed_per_week(challenge)
+    except (ValueError, ZeroDivisionError):
+        logger.error(f"Unexpected existing challenge info: {challenge}. Asking user to create a new one.")
+        return await _reply_ask_new_challenge(message, user_data)
+
+    img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
+                                                                       only_two_weeks=False,
+                                                                       only_challenge_range=True,
+                                                                       plot_label=glossary(
+                                                                        user_data).bodyweight_plot_label())
+
+    text = glossary(user_data).challenge_reply_template().format(
+        target_weight=challenge.target_weight,
+        target_date=challenge.end_date,
+        start_weight=challenge.start_weight,
+        start_date=challenge.start_date,
+        desired_speed=desired_speed,
+        current_speed=speed_week_kg
+    )
+
+    with open(img_path, 'rb') as img_file_object:
+        await bot.send_photo(message.chat.id, caption=text,
+                             photo=img_file_object,
+                             reply_markup=default_markup(user_data),
+                             reply_to_message_id=message.id,
+                             parse_mode='HTML')
+
+    try:
+        os.remove(img_path)
+    except OSError:
+        pass
+
+    user_data['conversation_state'] = ConversationState.init
+
+
+async def _reply_ask_new_challenge(message: types.Message, user_data: dict):
+    text = glossary(user_data).start_challenge_question()
+    markup = glossary(user_data).confirmation_markup()
+    await bot.send_message(message.chat.id,
+                           text,
+                           reply_markup=reply_markup(markup),
+                           parse_mode="HTML")
+    user_data['conversation_state'] = ConversationState.start_challenge_confirm
 
 
 async def reply_start(message: types.Message, user_data: dict):
@@ -267,9 +303,10 @@ def validate_body_weight(message: types.Message):
 
 def validate_date(message: types.Message) -> str:
     text = message.text.strip()
-    if text.lower() == 'today':
+    if text.lower() in Glossary.todays_lowercase():
         return datetime.now().strftime(date_format)
     try:
+        text = text.replace('\\', '/')  # replace backslash with slash for user-friendliness
         datetime.strptime(text, date_format)
     except (ValueError, TypeError):
         raise ValueError
@@ -467,23 +504,32 @@ async def reply_language_selected(message: types.Message, user_data: dict):
     user_data['conversation_state'] = ConversationState.init
 
 
-async def reply_existing_challenge(message: types.Message, user_data: dict):
-    dialogue_option = message.text.strip()
-    if dialogue_option == 'View progress':
-        await bot.reply_to(message, "TODO: show progress", reply_markup=default_markup(user_data))
-        user_data['conversation_state'] = ConversationState.init
-    elif dialogue_option == 'Disable challenge':
+async def reply_clear_challenge(message: types.Message, user_data: dict):
+    text = glossary(user_data).disable_challenge_question()
+    await bot.reply_to(message, text, reply_markup=reply_markup(glossary(user_data).confirmation_markup()))
+    user_data['conversation_state'] = ConversationState.clear_challenge_confirm
+
+
+async def reply_clear_challenge_confirm(message: types.Message, user_data: dict):
+    try:
+        result = message.text.strip().lower()
+    except (AttributeError, TypeError):
+        result = ''
+
+    if result in Glossary.confirmation_words():
         await insert_challenge(Challenge(user_id=str(message.chat.id), is_active=0))
-        await bot.reply_to(message, "Challenge disabled\n\n/start - menu\n/challenge - start new challenge")
-        user_data['conversation_state'] = ConversationState.init
+        text = glossary(user_data).challenge_disabled()
     else:
-        await reply_info(message, user_data)
-        user_data['conversation_state'] = ConversationState.init
+        text = glossary(user_data).action_cancelled()
+
+    await bot.reply_to(message, text)
+
+    user_data['conversation_state'] = ConversationState.init
 
 
 async def reply_start_challenge_confirm(message: types.Message, user_data: dict):
     text = message.text.strip()
-    if text.lower() != 'yes':
+    if text.lower() not in Glossary.confirmation_words():
         await reply_info(message, user_data)
         user_data['conversation_state'] = ConversationState.init
         return
@@ -492,7 +538,7 @@ async def reply_start_challenge_confirm(message: types.Message, user_data: dict)
     challenge.is_active = 0
     await insert_challenge(challenge)
 
-    answer = "Enter your starting weight"
+    answer = glossary(user_data).enter_starting_weight()
     await bot.reply_to(message, answer)
     user_data['conversation_state'] = ConversationState.awaiting_starting_weight
 
@@ -510,10 +556,9 @@ async def reply_starting_weight(message: types.Message, user_data: dict):
 
     await insert_challenge(challenge)
 
-    assert date_format == "%Y/%m/%d"
-    answer = (f"Enter starting date in format <b>YYYY/MM/DD</b> (e.g. 2023/06/23)"
-              f" or simply write \"<b>Today</b>\" to use today's date")
-    await bot.reply_to(message, answer, parse_mode="HTML", reply_markup=reply_markup(["Today"]))
+    answer = glossary(user_data).enter_starting_date()
+    today = glossary(user_data).today_lowercase().capitalize()
+    await bot.reply_to(message, answer, parse_mode="HTML", reply_markup=reply_markup([today]))
     user_data['conversation_state'] = ConversationState.awaiting_starting_date
 
 
@@ -521,7 +566,7 @@ async def reply_starting_date(message: types.Message, user_data: dict):
     try:
         start_date = validate_date(message)
     except ValueError:
-        await bot.reply_to(message, "Please enter a valid date")
+        await bot.reply_to(message, glossary(user_data).please_enter_valid_date())
         return
 
     challenge = await get_challenge_not_none(message.chat.id)
@@ -531,7 +576,7 @@ async def reply_starting_date(message: types.Message, user_data: dict):
 
     await insert_challenge(challenge)
 
-    answer = "Enter target weight"
+    answer = glossary(user_data).enter_target_weight()
     await bot.reply_to(message, answer)
     user_data['conversation_state'] = ConversationState.awaiting_target_weight
 
@@ -547,18 +592,15 @@ async def reply_target_weight(message: types.Message, user_data: dict):
     assert challenge.start_weight, "start_weight expected to be specified at this point of interaction with user"
     assert challenge.start_date, "start_date expected to be specified at this point of interaction with user"
 
-    if target_weight == challenge.start_weight:
-        await bot.reply_to(message, "Target weight cannot be the same as the starting weight.\nTry again")
-        return
+    # if target_weight == challenge.start_weight:
+    #     await bot.reply_to(message, "Target weight cannot be the same as the starting weight.\nTry again")
+    #     return
 
     challenge.target_weight = target_weight
     challenge.is_active = 0
 
     await insert_challenge(challenge)
-
-    assert date_format == "%Y/%m/%d"
-    answer = (f"When do you want to reach {challenge.target_weight} kg? "
-              f"\nEnter challenge end date in format <b>YYYY/MM/DD</b> (e.g. 2023/06/23)")
+    answer = glossary(user_data).when_do_you_want_to_reach_template().format(target_weight=challenge.target_weight)
     await bot.reply_to(message, answer, parse_mode="HTML")
     user_data['conversation_state'] = ConversationState.awaiting_target_date
 
@@ -567,7 +609,7 @@ async def reply_target_date(message: types.Message, user_data: dict):
     try:
         target_date = validate_date(message)
     except ValueError:
-        await bot.reply_to(message, "Please enter a valid date")
+        await bot.reply_to(message, glossary(user_data).please_enter_valid_date())
         return
 
     challenge = await get_challenge_not_none(message.chat.id)
@@ -576,8 +618,8 @@ async def reply_target_date(message: types.Message, user_data: dict):
     assert challenge.target_weight, "target_weight expected to be specified at this point of interaction with user"
 
     if datetime.strptime(challenge.start_date, date_format) > datetime.strptime(target_date, date_format):
-        await bot.reply_to(message, f"Target date cannot be earlier than start date ({challenge.start_date}). "
-                                    f"\nTry again")
+        text = glossary(user_data).target_date_cannot_be_earlier_template().format(start_date=challenge.start_date)
+        await bot.reply_to(message, text)
         return
 
     challenge.end_date = target_date
@@ -585,26 +627,34 @@ async def reply_target_date(message: types.Message, user_data: dict):
 
     await insert_challenge(challenge)
 
+    answer = glossary(user_data).please_confirm() + '\n\n'
     if challenge.start_weight < challenge.target_weight:
-        verb = "gain weight"
+        answer += glossary(user_data).you_want_to_gain_weight_template().format(start_weight=challenge.start_weight,
+                                                                                target_weight=challenge.target_weight)
+    elif challenge.start_weight > challenge.target_weight:
+        answer += glossary(user_data).you_want_to_lose_weight_template().format(start_weight=challenge.start_weight,
+                                                                                target_weight=challenge.target_weight)
     else:
-        verb = "lose weight"
+        answer += glossary(user_data).you_want_to_maintain_weight()
 
-    answer = "Please confirm (\"yes\"): \n\n"
-    answer += f"Your challenge is to {verb} "
-    answer += "to <b>{0}</b> kg by <b>{1}</b>.\n".format(challenge.target_weight, challenge.end_date)
-    answer += "You start on <b>{0}</b> weighing <b>{1}</b>"
+    answer += '\n'
+    answer += glossary(user_data).you_start_and_finish_template().format(start_date=challenge.start_date,
+                                                                         target_date=challenge.end_date) + '\n'
 
-    await bot.reply_to(message, answer, parse_mode="HTML", reply_markup=reply_markup(['Yes', 'Cancel']))
+    start_datetime = datetime.strptime(challenge.start_date, date_format)
+    end_datetime = datetime.strptime(challenge.end_date, date_format)
+    delta = end_datetime - start_datetime
+    answer += glossary(user_data).your_challenge_will_last_template().format(days=delta.days) + '\n'
+    answer += glossary(user_data).your_desired_speed_is_template().format(speed=get_desired_speed_per_week(challenge))
+
+    await bot.reply_to(message, answer, parse_mode="HTML", reply_markup=reply_markup(glossary(user_data).yes_cancel_markup()))
     user_data['conversation_state'] = ConversationState.awaiting_challenge_finalize_confirmation
 
 
 async def reply_challenge_finalize_confirmation(message: types.Message, user_data: dict):
     text = message.text.strip()
-    if text.lower() != 'yes':
-        await bot.reply_to(message, "Action cancelled\n\n"
-                                    "/start - show menu\n"
-                                    "/challenge - challenge options")
+    if text.lower() != Glossary.confirmation_words():
+        await bot.reply_to(message, glossary(user_data).action_cancelled())
         user_data['conversation_state'] = ConversationState.init
         return
 
@@ -616,7 +666,10 @@ async def reply_challenge_finalize_confirmation(message: types.Message, user_dat
     challenge.is_active = 1
 
     await insert_challenge(challenge)
-    answer = 'Challenge successfully created\n\n/start - return to menu'
+    await add_bodymass_record(challenge.user_id,
+                              datetime.strptime(challenge.start_date, date_format),
+                              challenge.start_weight)
+    answer = glossary(user_data).challenge_successfully_created()
     await bot.reply_to(message, answer)
     user_data['conversation_state'] = ConversationState.init
 

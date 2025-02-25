@@ -6,7 +6,8 @@ COMMAND_LIST = "/enter_weight - ввести текущий вес\n\n" \
                "/plot_all - показать график (за всё время) \n" \
                "/download - скачать данные (*.csv) \n" \
                "/upload - загрузить данные в бота (*.csv)\n" \
-               "/erase - стереть все данные \n\n" \
+               "/erase - стереть все данные \n" \
+               "/challenge - поставить цели и отслеживать прогресс \n" \
                "/start - показать меню \n\n" \
                "/info - информация и советы по использованию бота\n" \
                "/language - change language"
@@ -117,3 +118,50 @@ NOTFAT_OPTIONS = [
     "Конечно нет! Ты выглядишь просто великолепно. Продолжай в том же духе!",
     "Ни в коем случае! Помни, твоя ценность не зависит от цифр. Люби себя и заботься о себе!"
 ]
+
+CHALLENGE_REPLY_TEMPLATE = "Ваша цель - достичь <b>{target_weight:.2f} кг</b> к <b>{target_date}</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "Вы начали с <b>{start_weight:.2f} кг</b>, <b>{start_date}</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += ("Для успеха, ваша скорость изменения веса должна составлять "
+                             "<b>{desired_speed:.2f} кг в неделю</b>.\n")
+CHALLENGE_REPLY_TEMPLATE += "Сейчас вы двигаетесь со скоростью <b>{current_speed:.2f} кг в неделю</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "\n/start - показать меню"
+CHALLENGE_REPLY_TEMPLATE += "\n/clear_challenge - отменить цель"
+
+START_CHALLENGE_QUESTION = "Поставить цель?"
+
+DISABLE_CHALLENGE_QUESTION = "Отменить цель?"
+
+CONFIRMATION_MARKUP = ['Да', 'Нет']
+
+TODAY_LOWERCASE = 'сегодня'
+
+ENTER_STARTING_WEIGHT = "Введите стартовый вес"
+ENTER_STARTING_DATE = ("Введите стартовую дату в формате <b>ГГГГ/ММ/ДД</b> (например, 2023/06/23) или просто напишите "
+                       "\"<b>{0}</b>\" для выбора сегодняшней даты".format(TODAY_LOWERCASE.capitalize()))
+PLEASE_ENTER_VALID_DATE = "Пожалуйста, введите верную дату"
+ENTER_TARGET_WEIGHT = "Введите целевой вес"
+
+TARGET_WEIGHT_CANNOT_BE_SAME_TRY_AGAIN = ("Целевой вес не может быть равным стартовому весу."
+                                          "\nTry again")
+
+WHEN_DO_YOU_WANT_TO_REACH_TEMPLATE = ("Когда вы хотите достичь {target_weight:.2f} кг?"
+                                      "\nВведите дату достижения цели в формате <b>ГГГГ/MM/ДД</b> "
+                                      "(например, 2023/06/23)")
+
+TARGET_DATE_CANNOT_BE_EARLIER_TEMPLATE = ("Целевая дата не может быть раньше начальной ({start_date})."
+                                          "\nПопробуйте снова")
+
+PLEASE_CONFIRM = f"Пожалуйста, подтвердите (\"{CONFIRMATION_WORD}\"):"
+YOU_WANT_TO_LOSE_WEIGHT_TEMPLATE = "Вы хотите похудеть с {start_weight} кг до {target_weight} кг."
+YOU_WANT_TO_GAIN_WEIGHT_TEMPLATE = "Вы хотите набрать вес с {start_weight} кг до {target_weight} кг."
+YOU_WANT_TO_MAINTAIN_WEIGHT = "Вы хотите сохранить вес."
+
+YOU_START_AND_FINISH_TEMPLATE = "Вы стартуете {start_date} и хотите достичь цели к {target_date}."
+YOUR_CHALLENGE_WILL_LAST_TEMPLATE = "Ваша трансформация займёт {days} дней."
+YOUR_DESIRED_SPEED_IS_TEMPLATE = "Для достижения цели, вам нужно идти со скоростью {speed:.2f} кг в неделю."
+
+CHALLENGE_DISABLED = 'Цель отменена.\n/start - показать меню\n/challenge - поставить новую цель'
+ACTION_CANCELLED = 'Действие отменено.\n/start - показать меню'
+CHALLENGE_SUCCESSFULLY_CREATED = 'Цель успешно создана\n/start - показать меню'
+
+YES_CANCLEL_MARKUP = [CONFIRMATION_WORD.capitalize(), 'Отмена']
