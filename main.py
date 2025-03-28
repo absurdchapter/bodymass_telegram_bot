@@ -653,7 +653,7 @@ async def reply_target_date(message: types.Message, user_data: dict):
 
 async def reply_challenge_finalize_confirmation(message: types.Message, user_data: dict):
     text = message.text.strip()
-    if text.lower() != Glossary.confirmation_words():
+    if text.lower() not in  Glossary.confirmation_words():
         await bot.reply_to(message, glossary(user_data).action_cancelled())
         user_data['conversation_state'] = ConversationState.init
         return
