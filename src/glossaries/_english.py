@@ -57,7 +57,8 @@ YOU_ARE_LOSING_TEMPLATE = "You are losing weight at an average rate of <i>%.2f k
 
 WHICH_IS_TOO_SLOW = "(which is too slow to classify as a surplus or a deficit)\n"
 
-PLEASE_ENTER_VALID_POSITIVE_NUMBER = "Please enter a valid positive number (your body mass in kg) /start"
+PLEASE_ENTER_VALID_POSITIVE_NUMBER = ("Please enter a valid positive number (your body mass in kg)\n"
+                                      "/start - return to menu")
 
 SUCCESSFULLY_ADDED_NEW_ENTRY = "Successfully added a new entry:"
 
