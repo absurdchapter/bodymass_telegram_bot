@@ -530,7 +530,7 @@ async def reply_clear_challenge_confirm(message: types.Message, user_data: dict)
 async def reply_start_challenge_confirm(message: types.Message, user_data: dict):
     text = message.text.strip()
     if text.lower() not in Glossary.confirmation_words():
-        await reply_info(message, user_data)
+        await reply_start(message, user_data)
         user_data['conversation_state'] = ConversationState.init
         return
 
