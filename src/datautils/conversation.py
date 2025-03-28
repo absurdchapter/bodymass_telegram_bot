@@ -19,6 +19,15 @@ class ConversationState:
     awaiting_erase_confirmation = 'awaiting_erase_confirmation'
     awaiting_csv_table = 'awaiting_csv_table'
     awaiting_language = 'awaiting_language'
+    start_challenge_confirm = 'start_challenge_confirm'
+    clear_challenge_confirm = 'clear_challenge_confirm'
+
+    awaiting_starting_weight = 'awaiting_starting_weight'
+    awaiting_starting_date = 'awaiting_starting_date'
+    awaiting_target_weight = 'awaiting_target_weight'
+    awaiting_target_date = 'awaiting_target_date'
+
+    awaiting_challenge_finalize_confirmation = 'awaiting_challenge_finalize_confirmation'
 
 
 _assert_enum_consistency(ConversationState)
@@ -36,7 +45,8 @@ _assert_enum_consistency(Language)
 languages = [k for k in vars(Language).keys() if not k.startswith('_')]
 
 
-async def get_user_data(user_id: int) -> dict:
+
+async def get_conversation_data(user_id: int) -> dict:
     async with aiosqlite.connect(sqlite_db_path) as db:
         result = dict()
         result['conversation_state'] = await get_conversation_state(db, user_id)
@@ -75,7 +85,7 @@ async def get_language(db: aiosqlite.Connection, user_id: int) -> str | None:
         raise exc
 
 
-async def write_user_data(user_id: int, user_data: dict) -> None:
+async def write_conversation_data(user_id: int, user_data: dict) -> None:
     async with aiosqlite.connect(sqlite_db_path) as db:
         await write_conversation_state(db, user_data['conversation_state'], user_id)
         if 'language' in user_data:

@@ -1,4 +1,5 @@
 import os
+
 from telebot import asyncio_helper
 
 SQLITE_PATH = 'data/bodymass.db'

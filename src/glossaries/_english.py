@@ -6,7 +6,8 @@ COMMAND_LIST = "/enter_weight - enter current weight\n\n" \
                "/plot_all - show plot (all time) \n" \
                "/download - download data (*.csv) \n" \
                "/upload - upload data (*.csv)\n" \
-               "/erase - erase all data \n\n" \
+               "/erase - erase all data \n" \
+               "/challenge - start / view challenge\n\n" \
                "/start - show menu \n\n" \
                "/info - info and advice on how to use this bot\n" \
                "/language - сменить язык"
@@ -117,3 +118,47 @@ NOTFAT_OPTIONS = [
     "Heck no! You're amazing just the way you are. Keep shining and striving for your best self!",
     "Not in the slightest! You're beautiful, both inside and out. Keep nurturing yourself with love and care."
 ]
+
+CHALLENGE_REPLY_TEMPLATE = "Your goal is to reach <b>{target_weight:.2f} kg</b> by <b>{target_date}</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "You started with <b>{start_weight:.2f} kg</b> on <b>{start_date}</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "To succeed, your speed should be <b>{desired_speed:.2f} kg per week</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "You are currently moving at a rate of <b>{current_speed:.2f} kg per week</b>.\n"
+CHALLENGE_REPLY_TEMPLATE += "\n/start - show menu"
+CHALLENGE_REPLY_TEMPLATE += "\n/clear_challenge - disable challenge"
+
+START_CHALLENGE_QUESTION = "Start challenge?"
+
+DISABLE_CHALLENGE_QUESTION = "Disable challenge?"
+
+CONFIRMATION_MARKUP = ['Yes', 'No']
+
+TODAY_LOWERCASE = 'today'
+
+ENTER_STARTING_WEIGHT = "Enter your starting weight"
+
+assert date_format == "%Y/%m/%d"
+ENTER_STARTING_DATE = ("Enter starting date in format <b>YYYY/MM/DD</b> (e.g. 2023/06/23) or simply write "
+                       "\"<b>{0}</b>\" to use today's date".format(TODAY_LOWERCASE.capitalize()))
+PLEASE_ENTER_VALID_DATE = "Please enter a valid date"
+ENTER_TARGET_WEIGHT = "Enter target weight"
+# TARGET_WEIGHT_CANNOT_BE_SAME_TRY_AGAIN = "Target weight cannot be the same as the starting weight.\nTry again"
+
+assert date_format == "%Y/%m/%d"
+WHEN_DO_YOU_WANT_TO_REACH_TEMPLATE = ("When do you want to reach {target_weight:.2f} kg?"
+                             "\nEnter challenge end date in format <b>YYYY/MM/DD</b> (e.g. 2023/06/23)")
+
+TARGET_DATE_CANNOT_BE_EARLIER_TEMPLATE = "Target date cannot be earlier than start date ({start_date}). \nTry again"
+
+PLEASE_CONFIRM = f"Please confirm (\"{CONFIRMATION_WORD}\"):"
+YOU_WANT_TO_LOSE_WEIGHT_TEMPLATE = "You want to lose weight from {start_weight} kg to {target_weight} kg."
+YOU_WANT_TO_GAIN_WEIGHT_TEMPLATE = "You want to gain weight from {start_weight} kg to {target_weight} kg."
+YOU_WANT_TO_MAINTAIN_WEIGHT = "You want to maintain weight."
+YOU_START_AND_FINISH_TEMPLATE = "You start on {start_date} and finish on {target_date}."
+YOUR_CHALLENGE_WILL_LAST_TEMPLATE = "Your challenge will last {days}."
+YOUR_DESIRED_SPEED_IS_TEMPLATE = "You will need to move at a rate of {speed:.2f} kg per week to achieve the goal."
+
+CHALLENGE_DISABLED = 'Challenge disabled.\n/start - show menu\n/challenge - start new challenge'
+ACTION_CANCELLED = 'Action cancelled.\n/start - show menu'
+CHALLENGE_SUCCESSFULLY_CREATED = 'Challenge successfully created\n/start - return to menu'
+
+YES_CANCLEL_MARKUP = [CONFIRMATION_WORD.capitalize(), 'Cancel']
