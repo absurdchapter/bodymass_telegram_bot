@@ -191,6 +191,8 @@ async def reply_challenge(message: types.Message, user_data: dict):
                                                                        plot_label=glossary(
                                                                         user_data).bodyweight_plot_label())
 
+    logger.debug(f'Challenge: {challenge}')
+
     text = glossary(user_data).challenge_reply_template().format(
         target_weight=challenge.target_weight,
         target_date=challenge.end_date,
