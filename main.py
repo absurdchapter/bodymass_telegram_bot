@@ -57,6 +57,7 @@ async def handler(message):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         logger.critical("Unexpected error [%s:%d]: %s: %s" % (fname, exc_tb.tb_lineno, type(exception).__name__,
                                                               exception))
+        logger.exception()
 
 
 def reply_markup(buttons):
