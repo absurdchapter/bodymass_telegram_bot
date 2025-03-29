@@ -338,6 +338,7 @@ async def reply_plot(message: types.Message, user_data: dict):
 async def reply_plot_all(message: types.Message, user_data: dict):
     img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
                                                                        only_two_weeks=False,
+                                                                       only_challenge_range=True,
                                                                        plot_label=glossary(
                                                                            user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:
