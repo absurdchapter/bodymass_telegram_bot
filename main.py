@@ -57,7 +57,7 @@ async def handler(message):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         logger.critical("Unexpected error [%s:%d]: %s: %s" % (fname, exc_tb.tb_lineno, type(exception).__name__,
                                                               exception))
-        logger.exception()
+        logger.exception(exception)
 
 
 def reply_markup(buttons):
@@ -193,13 +193,14 @@ async def reply_challenge(message: types.Message, user_data: dict):
 
     logger.debug(f'Challenge: {challenge}')
 
-    text = glossary(user_data).challenge_reply_template().format(
+    template = glossary(user_data).challenge_reply_template()
+    text = template.format(
         target_weight=challenge.target_weight,
         target_date=challenge.end_date,
         start_weight=challenge.start_weight,
         start_date=challenge.start_date,
         desired_speed=desired_speed,
-        current_speed=speed_week_kg
+        current_speed=speed_week_kg or 0.0
     )
 
     with open(img_path, 'rb') as img_file_object:
