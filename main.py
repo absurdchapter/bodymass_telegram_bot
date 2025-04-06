@@ -275,6 +275,7 @@ async def reply_body_weight(message: types.Message, user_data: dict):
     await add_bodymass_record_now(message.chat.id, body_weight)
     img_path, speed_week_kg, mean_mass = await plot_user_bodymass_data(message.chat.id,
                                                                        only_two_weeks=True,
+                                                                       only_challenge_range=True,
                                                                        plot_label=glossary(
                                                                            user_data).bodyweight_plot_label())
     with open(img_path, 'rb') as img_file_object:

@@ -67,15 +67,12 @@ async def plot_user_bodymass_data(user_id: int, *,
     Keyword arguments:
     :param user_id: user id
     :param only_two_weeks: draw progress only for the past 2 weeks
-    :param only_challenge_range: draw only challenge range (cannot be used with only_two_weeks)
+    :param only_challenge_range: draw only challenge range
     :param plot_label: plot label
     :param ignore_challenge: if True, challenge will be ignored
 
     :return: image temporary file path, speed kg/week, mean body mass
     """
-    if only_challenge_range and only_two_weeks:
-        raise AttributeError("only_challenge_range cannot be used with only_two_weeks")
-
     os.makedirs(plot_tmp_folder, exist_ok=True)
     plot_file_path = os.path.join(plot_tmp_folder,
                                   plot_tmp_filename_template.format(user_id=user_id, hash=random_hash()))
@@ -113,12 +110,11 @@ def _get_date_limits(
         only_challenge_range: bool,
         only_two_weeks: bool
 ) -> t.Optional[tuple[datetime, datetime]]:
-    assert not (only_challenge_range and only_two_weeks)
-    if only_two_weeks:
-        return datetime.now() - timedelta(days=14), datetime.now()
     if only_challenge_range and challenge:
         return (datetime.strptime(challenge.start_date, date_format),
                 datetime.strptime(challenge.end_date, date_format))
+    if only_two_weeks:
+        return datetime.now() - timedelta(days=14), datetime.now()
 
 
 def desired_regression(challenge: Challenge):
