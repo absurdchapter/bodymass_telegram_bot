@@ -457,7 +457,7 @@ async def reply_erase_confirmation(message, user_data: dict):
 
     csv_file_path = await user_bodymass_data_to_csv(message.chat.id)
     await delete_user_bodymass_data(message.chat.id)
-    await delete_challenges(message.chat.it)
+    await delete_challenges(message.chat.id)
 
     file_size = os.path.getsize(csv_file_path)
     if file_size == 0:
