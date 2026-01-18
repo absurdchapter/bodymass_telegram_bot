@@ -254,6 +254,49 @@ def test_two_points():
     print('Result saved to', file_path)
 
 
+def test_date_distribution():
+    print(f"Running {_get_funcname()}...", )
+
+    dates = [
+        datetime(2026, 1, 1),
+        datetime(2026, 1, 2),
+        datetime(2026, 1, 3),
+        datetime(2026, 1, 4),
+        datetime(2026, 1, 5),
+        datetime(2026, 1, 6),
+        datetime(2026, 1, 8),
+        datetime(2026, 1, 9),
+        datetime(2026, 1, 10),
+        datetime(2026, 1, 11),
+        datetime(2026, 1, 13),
+        datetime(2026, 1, 14),
+        datetime(2026, 1, 16),
+        datetime(2026, 1, 18),
+    ]
+
+    measurements = [
+        110,
+        109.2,
+        108.55,
+        108,
+        108.3,
+        108.55,
+        108.55,
+        108.65,
+        109.1,
+        108.2,
+        108,
+        107.45,
+        108.1,
+        106.8,
+    ]
+    assert len(dates) == len(measurements)
+
+    file_path = _get_file_path(_get_funcname())
+    draw_plot_bodymass(dates, measurements, file_path, "Bodyweight, kg")
+    print('Result saved to', file_path)
+
+
 def main():
     for name, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isfunction(obj) and name.startswith('test_'):
